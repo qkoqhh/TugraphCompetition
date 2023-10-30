@@ -90,16 +90,12 @@ public class LoanAmount {
                                         mp.put(Long.valueOf(fields[0]), Double.valueOf(fields[1]));
                                         return Collections.emptyList();
                                     }, loanID2Amount), AllWindow.getInstance())
-                            .withParallelism(conf.getInteger(ExampleConfigKeys.SOURCE_PARALLELISM));
+                            .withParallelism(conf.getInteger(MyConfigKeys.SOURCE_PARALLELISM));
 
             PWindowSource<IEdge<Long, Double>> prEdges = pipelineTaskCxt.buildSource(
-                    new LoanAmountSource<IEdge<Long,Double>>(DATA_PWD + "Loan.csv",
-                            (line, mp) -> {
-                                return Collections.emptyList();
-                            },
-                            null
-                    ), AllWindow.getInstance()
-            ).withParallelism(conf.getInteger(MyConfigKeys.SOURCE_PARALLELISM));
+                    new NullAmountSource<IEdge<Long,Double>>()
+                    , AllWindow.getInstance()
+            ).withParallelism(conf.getInteger(ExampleConfigKeys.SOURCE_PARALLELISM));
 
             int iterationParallelism = conf.getInteger(ExampleConfigKeys.ITERATOR_PARALLELISM);
             GraphViewDesc graphViewDesc = GraphViewBuilder

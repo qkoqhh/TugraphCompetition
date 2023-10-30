@@ -8,26 +8,22 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.transform.Source;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.*;
 
-public class LoanAmountSource<OUT> extends RichFunction implements SourceFunction<OUT> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoanAmountSource.class);
+public class NullAmountSource<OUT> extends RichFunction implements SourceFunction<OUT> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NullAmountSource.class);
 
-    protected final String filePath;
     static protected Map<String, List<String>> lineMap = new HashMap<>();
-    protected final LoanAmountSource.FileLineParser<OUT> parser;
     protected transient RuntimeContext runtimeContext;
 
-    protected static Map<Long, Double> loanID2Amount;
 
-    public LoanAmountSource(String filePath, LoanAmountSource.FileLineParser<OUT> parser, Map<Long,Double> loanID2Amount) {
-        this.filePath = filePath;
-        this.parser = parser;
-        LoanAmountSource.loanID2Amount =loanID2Amount;
+    public NullAmountSource() {
+
     }
 
     @Override
@@ -40,26 +36,7 @@ public class LoanAmountSource<OUT> extends RichFunction implements SourceFunctio
     protected List<OUT> record;
     @Override
     public void init(int parallel, int index) {
-        record = new ArrayList<>();
-        LOGGER.info("Parallel {} index {}",parallel,index);
-        synchronized (lineMap){
-            if(!lineMap.containsKey(filePath)){
-                System.err.println("Parallel "+parallel+"; Index "+index);
-                lineMap.put(filePath, readFileLines(filePath));
-            }
-            lines = lineMap.get(filePath);
-        }
-        int size = lines.size();
-        readPos = Math.max (1, size /parallel*index);
-        readEnd = Math.min(size/parallel*(index+1),size);
-        LOGGER.info("Index : {}  Size : {}",index, readEnd-readPos);
-        long start = System.currentTimeMillis();
-        for (int i=readPos ; i<readEnd ; i++){
-            record.addAll(parser.parse(lines.get(i), loanID2Amount));
-        }
-        readPos=0;
-        readEnd = record.size();
-        LOGGER.info("Index : {}  Time : {} ",index ,System.currentTimeMillis() - start);
+        LOGGER.info("FAKE: Parallel {} index {}",parallel,index);
     }
 
     @Override
@@ -98,7 +75,4 @@ public class LoanAmountSource<OUT> extends RichFunction implements SourceFunctio
         }
     }
 
-    public interface FileLineParser<OUT> extends Serializable {
-        Collection<OUT> parse(String line, Map<Long,Double> loanID2Amount);
-    }
 }
