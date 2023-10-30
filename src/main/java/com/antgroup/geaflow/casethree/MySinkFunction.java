@@ -52,10 +52,17 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     public void close() {
         LOGGER.info("Close");
         list.sort(Comparator.comparing(o->o.getId()));
+        StringBuilder stringBuilder=new StringBuilder();
         try {
-            for (IVertex<Long, Double> v : list) {
-                FileUtils.write(file, v.getId() + "|" + v.getValue() + "\n", Charset.defaultCharset(),true);
-            }
+            stringBuilder.append("id|value\n");
+//            FileUtils.write(file,"id|value\n",Charset.defaultCharset());
+            list.forEach(v->{
+                stringBuilder.append(v.getId());
+                stringBuilder.append('|');
+                stringBuilder.append(String.format("%.2f",v.getValue()));
+                stringBuilder.append('\n');
+            });
+            FileUtils.write(file,stringBuilder.toString(),Charset.defaultCharset(),true);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

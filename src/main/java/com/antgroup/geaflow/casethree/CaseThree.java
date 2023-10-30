@@ -36,10 +36,20 @@ public class CaseThree {
     public static String OUTPUT_PWD = "./target/tmp/data/result/pagerank";
 
     public static void main(String[] args) {
+        long startTime = System.currentTimeMillis();
+
+        if (args.length==2){
+            DATA_PWD=args[1];
+            OUTPUT_PWD=args[2];
+        }
+
         Environment environment = EnvironmentUtil.loadEnvironment(args);
         IPipelineResult result = CaseThree.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();
+
+        long endTime = System.currentTimeMillis();
+        LOGGER.info("Total Time : {} s",(endTime-startTime)/1000.0);
     }
 
     static IPipelineResult submit(Environment environment) {
