@@ -1,4 +1,4 @@
-package com.antgroup.geaflow.case4.LoanAmount;
+package com.antgroup.geaflow.case1and4.case4.PersonLoan;
 
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
@@ -14,20 +14,20 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.*;
 
-public class LoanAmountSource<OUT> extends RichFunction implements SourceFunction<OUT> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(LoanAmountSource.class);
+public class PersonLoanSource<OUT> extends RichFunction implements SourceFunction<OUT> { // Same as LoanAmountSource
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersonLoanSource.class);
 
     protected final String filePath;
     static protected Map<String, List<String>> lineMap = new HashMap<>();
-    protected final LoanAmountSource.FileLineParser<OUT> parser;
+    protected final PersonLoanSource.FileLineParser<OUT> parser;
     protected transient RuntimeContext runtimeContext;
 
-    protected static Map<Long, Double> loanID2Amount;
+    protected static Map<Long, Double> personID2loanAmount;
 
-    public LoanAmountSource(String filePath, LoanAmountSource.FileLineParser<OUT> parser, Map<Long,Double> loanID2Amount) {
+    public PersonLoanSource(String filePath, PersonLoanSource.FileLineParser<OUT> parser, Map<Long,Double> personID2loanAmount) {
         this.filePath = filePath;
         this.parser = parser;
-        LoanAmountSource.loanID2Amount =loanID2Amount;
+        PersonLoanSource.personID2loanAmount =personID2loanAmount;
     }
 
     @Override
@@ -50,12 +50,12 @@ public class LoanAmountSource<OUT> extends RichFunction implements SourceFunctio
             lines = lineMap.get(filePath);
         }
         int size = lines.size();
-        readPos = Math.max (1, size /parallel*index);
-        readEnd = Math.min(size/parallel*(index+1),size);
+        readPos = Math.max (1, size*index/parallel);
+        readEnd = Math.min(size*(index+1)/parallel,size);
         LOGGER.info("Index : {}  Size : {}",index, readEnd-readPos);
         long start = System.currentTimeMillis();
         for (int i=readPos ; i<readEnd ; i++){
-            record.addAll(parser.parse(lines.get(i), loanID2Amount));
+            record.addAll(parser.parse(lines.get(i), personID2loanAmount));
         }
         readPos=0;
         readEnd = record.size();
@@ -63,7 +63,7 @@ public class LoanAmountSource<OUT> extends RichFunction implements SourceFunctio
     }
 
     @Override
-    public boolean fetch(IWindow<OUT> window, SourceContext<OUT> ctx) throws Exception {
+    public boolean fetch(IWindow<OUT> window, SourceFunction.SourceContext<OUT> ctx) throws Exception {
         LOGGER.info("collection source fetch taskId:{}, batchId:{}, start readPos {}, totalSize {}",
                 runtimeContext.getTaskArgs().getTaskId(), window.windowId(), readPos, lineMap.size());
         while (readPos < readEnd) {
@@ -99,6 +99,6 @@ public class LoanAmountSource<OUT> extends RichFunction implements SourceFunctio
     }
 
     public interface FileLineParser<OUT> extends Serializable {
-        Collection<OUT> parse(String line, Map<Long,Double> loanID2Amount);
+        Collection<OUT> parse(String line, Map<Long,Double> personID2loanAmount);
     }
 }

@@ -1,4 +1,4 @@
-package com.antgroup.geaflow.case4.LoanAmount;
+package com.antgroup.geaflow.case1and4.Nulls;
 
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
@@ -12,17 +12,17 @@ public class NullSinkFunction extends RichFunction implements SinkFunction<IVert
     private static final Logger LOGGER = LoggerFactory.getLogger(NullSinkFunction.class);
     @Override
     public void open(RuntimeContext runtimeContext) {
-        LOGGER.info("case 4 LoanAmount sink open: fake");
+        LOGGER.info("NullSink open: fake");
     }
 
     @Override
     public void close() {
-        LOGGER.info("case 4 LoanAmount sink close: fake");
+        LOGGER.info("NullSink close: fake");
     }
 
 
     @Override
     public void write(IVertex<Long, Double> longDoubleIVertex) throws Exception {
-        LOGGER.info("case 4 LoanAmount sink write: nothing");
+        LOGGER.info("NullSink write: nothing");
     }
 }

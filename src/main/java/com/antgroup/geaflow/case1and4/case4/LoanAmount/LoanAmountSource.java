@@ -1,4 +1,4 @@
-package com.antgroup.geaflow.case4.LoanAmount;
+package com.antgroup.geaflow.case1and4.case4.LoanAmount;
 
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
@@ -10,18 +10,24 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.*;
 
-public class NullSource<OUT> extends RichFunction implements SourceFunction<OUT> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NullSource.class);
+public class LoanAmountSource<OUT> extends RichFunction implements SourceFunction<OUT> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoanAmountSource.class);
 
+    protected final String filePath;
     static protected Map<String, List<String>> lineMap = new HashMap<>();
+    protected final LoanAmountSource.FileLineParser<OUT> parser;
     protected transient RuntimeContext runtimeContext;
 
+    protected static Map<Long, Double> loanID2Amount;
 
-    public NullSource() {
-
+    public LoanAmountSource(String filePath, LoanAmountSource.FileLineParser<OUT> parser, Map<Long,Double> loanID2Amount) {
+        this.filePath = filePath;
+        this.parser = parser;
+        LoanAmountSource.loanID2Amount =loanID2Amount;
     }
 
     @Override
@@ -34,7 +40,26 @@ public class NullSource<OUT> extends RichFunction implements SourceFunction<OUT>
     protected List<OUT> record;
     @Override
     public void init(int parallel, int index) {
-        LOGGER.info("FAKE: Parallel {} index {}",parallel,index);
+        record = new ArrayList<>();
+        LOGGER.info("Parallel {} index {}",parallel,index);
+        synchronized (lineMap){
+            if(!lineMap.containsKey(filePath)){
+                System.err.println("Parallel "+parallel+"; Index "+index);
+                lineMap.put(filePath, readFileLines(filePath));
+            }
+            lines = lineMap.get(filePath);
+        }
+        int size = lines.size();
+        readPos = Math.max (1, size*index/parallel);
+        readEnd = Math.min(size*(index+1)/parallel,size);
+        LOGGER.info("Index : {}  Size : {}",index, readEnd-readPos);
+        long start = System.currentTimeMillis();
+        for (int i=readPos ; i<readEnd ; i++){
+            record.addAll(parser.parse(lines.get(i),loanID2Amount));
+        }
+        readPos=0;
+        readEnd = record.size();
+        LOGGER.info("Index : {}  Time : {} ",index ,System.currentTimeMillis() - start);
     }
 
     @Override
@@ -73,4 +98,7 @@ public class NullSource<OUT> extends RichFunction implements SourceFunction<OUT>
         }
     }
 
+    public interface FileLineParser<OUT> extends Serializable {
+        Collection<OUT> parse(String line,Map<Long,Double> mp);
+    }
 }
