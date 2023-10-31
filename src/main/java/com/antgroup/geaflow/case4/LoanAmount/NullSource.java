@@ -8,21 +8,19 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.transform.Source;
 import java.io.File;
 import java.io.IOException;
-import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.*;
 
-public class NullAmountSource<OUT> extends RichFunction implements SourceFunction<OUT> {
-    private static final Logger LOGGER = LoggerFactory.getLogger(NullAmountSource.class);
+public class NullSource<OUT> extends RichFunction implements SourceFunction<OUT> {
+    private static final Logger LOGGER = LoggerFactory.getLogger(NullSource.class);
 
     static protected Map<String, List<String>> lineMap = new HashMap<>();
     protected transient RuntimeContext runtimeContext;
 
 
-    public NullAmountSource() {
+    public NullSource() {
 
     }
 

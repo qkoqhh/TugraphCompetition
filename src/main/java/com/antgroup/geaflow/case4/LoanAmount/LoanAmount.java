@@ -1,48 +1,28 @@
 package com.antgroup.geaflow.case4.LoanAmount;
 
-import com.antgroup.geaflow.api.function.base.FilterFunction;
-import com.antgroup.geaflow.api.function.base.FlatMapFunction;
-import com.antgroup.geaflow.api.function.base.KeySelector;
-import com.antgroup.geaflow.api.function.base.MapFunction;
 import com.antgroup.geaflow.api.function.io.SinkFunction;
-import com.antgroup.geaflow.api.function.io.SourceFunction;
 import com.antgroup.geaflow.api.graph.PGraphWindow;
 import com.antgroup.geaflow.api.graph.compute.VertexCentricCompute;
 import com.antgroup.geaflow.api.graph.function.vc.VertexCentricCombineFunction;
 import com.antgroup.geaflow.api.graph.function.vc.VertexCentricComputeFunction;
-import com.antgroup.geaflow.api.pdata.PStreamSink;
-import com.antgroup.geaflow.api.pdata.PStreamSource;
-import com.antgroup.geaflow.api.pdata.PWindowCollect;
-import com.antgroup.geaflow.api.pdata.stream.PStream;
-import com.antgroup.geaflow.api.pdata.stream.window.PWindowBroadcastStream;
-import com.antgroup.geaflow.api.pdata.stream.window.PWindowKeyStream;
 import com.antgroup.geaflow.api.pdata.stream.window.PWindowSource;
-import com.antgroup.geaflow.api.pdata.stream.window.PWindowStream;
-import com.antgroup.geaflow.api.window.IWindow;
 import com.antgroup.geaflow.api.window.impl.AllWindow;
 import com.antgroup.geaflow.casethree.MyConfigKeys;
-import com.antgroup.geaflow.casethree.MyFileSource;
 import com.antgroup.geaflow.casethree.MySinkFunction;
 import com.antgroup.geaflow.common.config.Configuration;
-import com.antgroup.geaflow.common.encoder.IEncoder;
 import com.antgroup.geaflow.env.Environment;
 import com.antgroup.geaflow.example.config.ExampleConfigKeys;
 import com.antgroup.geaflow.example.function.AbstractVcFunc;
 import com.antgroup.geaflow.example.function.FileSink;
-import com.antgroup.geaflow.example.function.FileSource;
 import com.antgroup.geaflow.example.util.EnvironmentUtil;
-import com.antgroup.geaflow.example.util.ExampleSinkFunctionFactory;
 import com.antgroup.geaflow.example.util.PipelineResultCollect;
 import com.antgroup.geaflow.example.util.ResultValidator;
-import com.antgroup.geaflow.model.graph.edge.EdgeDirection;
 import com.antgroup.geaflow.model.graph.edge.IEdge;
-import com.antgroup.geaflow.model.graph.edge.impl.ValueEdge;
 import com.antgroup.geaflow.model.graph.vertex.IVertex;
 import com.antgroup.geaflow.model.graph.vertex.impl.ValueVertex;
 import com.antgroup.geaflow.pipeline.IPipelineResult;
 import com.antgroup.geaflow.pipeline.Pipeline;
 import com.antgroup.geaflow.pipeline.PipelineFactory;
-import com.antgroup.geaflow.pipeline.context.IPipelineContext;
 import com.antgroup.geaflow.pipeline.task.PipelineTask;
 import com.antgroup.geaflow.view.GraphViewBuilder;
 import com.antgroup.geaflow.view.IViewDesc;
@@ -93,7 +73,7 @@ public class LoanAmount {
                             .withParallelism(conf.getInteger(MyConfigKeys.SOURCE_PARALLELISM));
 
             PWindowSource<IEdge<Long, Double>> prEdges = pipelineTaskCxt.buildSource(
-                    new NullAmountSource<IEdge<Long,Double>>()
+                    new NullSource<IEdge<Long,Double>>()
                     , AllWindow.getInstance()
             ).withParallelism(conf.getInteger(ExampleConfigKeys.SOURCE_PARALLELISM));
 
