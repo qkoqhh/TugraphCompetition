@@ -45,8 +45,8 @@ public class CaseTwo {
         long startTime = System.currentTimeMillis();
 
         if (args.length == 2) {
-            DATA_PWD = args[1];
-            OUTPUT_PWD = args[2];
+            DATA_PWD = args[0];
+            OUTPUT_PWD = args[1];
         }
 
         Environment environment = EnvironmentUtil.loadEnvironment(args);
