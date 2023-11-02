@@ -59,7 +59,7 @@ public class GuaranteeGraphSinkFunction extends RichFunction implements SinkFunc
             list.forEach(v->{
                 stringBuilder.append(v.getId());
                 stringBuilder.append('|');
-                stringBuilder.append(String.format("%.2lf",v.getValue().value));
+                stringBuilder.append(String.format("%.2f",v.getValue().value));
                 stringBuilder.append('\n');
             });
             FileUtils.write(file,stringBuilder.toString(), Charset.defaultCharset(),true);
