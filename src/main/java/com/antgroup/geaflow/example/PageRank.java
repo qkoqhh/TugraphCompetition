@@ -57,7 +57,7 @@ public class PageRank {
         Pipeline pipeline = PipelineFactory.buildPipeline(environment);
         Configuration envConfig = environment.getEnvironmentContext().getConfig();
         envConfig.put(FileSink.OUTPUT_DIR, RESULT_FILE_PATH);
-        ResultValidator.cleanResult(RESULT_FILE_PATH);
+        //ResultValidator.cleanResult(RESULT_FILE_PATH);
 
         pipeline.submit((PipelineTask) pipelineTaskCxt -> {
             Configuration conf = pipelineTaskCxt.getConfig();

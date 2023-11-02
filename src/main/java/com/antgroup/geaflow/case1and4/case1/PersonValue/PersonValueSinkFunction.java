@@ -63,7 +63,7 @@ public class PersonValueSinkFunction extends RichFunction implements SinkFunctio
             list.forEach(v->{
                 stringBuilder.append(v.getF0());
                 stringBuilder.append("|");
-                stringBuilder.append(v.getF1());
+                stringBuilder.append(String.format("%.2lf",v.getF1()));
                 stringBuilder.append("\n");
             });
             FileUtils.write(file,stringBuilder.toString(), Charset.defaultCharset(),true);

@@ -46,6 +46,7 @@ public class PersonValue {
             DATA_PWD=args[0];
             OUTPUT_PWD=args[1];
         }
+
         if (!DATA_PWD.endsWith("/")){
             DATA_PWD = DATA_PWD + "/";
         }
