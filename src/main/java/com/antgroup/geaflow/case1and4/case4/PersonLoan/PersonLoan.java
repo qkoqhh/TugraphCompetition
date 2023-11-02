@@ -34,9 +34,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PersonLoan {
-    private static final Logger LOGGER = LoggerFactory.getLogger(PersonLoanSource.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PersonLoan.class);
 
     public static String DATA_PWD = "./src/main/resources/snapshot/";
     public static String RESULT_FILE_PATH = "./target/tmp/data/result/PersonLoan";
@@ -50,7 +51,7 @@ public class PersonLoan {
             DATA_PWD=args[0];
             RESULT_FILE_PATH=args[1];
         }
-        personID2loanAmount = new HashMap<>();
+        personID2loanAmount = new ConcurrentHashMap<>();
         Environment environment = EnvironmentUtil.loadEnvironment(args);
         IPipelineResult result = PersonLoan.submit(environment);
         PipelineResultCollect.get(result);
