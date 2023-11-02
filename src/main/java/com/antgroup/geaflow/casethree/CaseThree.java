@@ -33,7 +33,7 @@ import java.util.*;
 public class CaseThree {
     private static final Logger LOGGER = LoggerFactory.getLogger(CaseThree.class);
     private static final double EPS=1E-8;
-    public static String DATA_PWD = "D:\\work\\resources\\sf1\\snapshot\\";
+    public static String DATA_PWD = "D://work/resources/sf1/snapshot/";
     public static String OUTPUT_PWD = "./target/tmp/data/result/pagerank";
 
     public static void main(String[] args) {

@@ -22,28 +22,39 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     public File file;
     RuntimeContext runtimeContext;
 
+    static Boolean firstOpen=false;
+
     @Override
     public void open(RuntimeContext runtimeContext) {
         this.runtimeContext=runtimeContext;
         filePath = String.format("%s/result%s.csv", runtimeContext.getConfiguration().getString("output.dir"), CASEID);
         LOGGER.info("sink file name {}", filePath);
-        file=new File(filePath);
 
-        try {
-            if (file.exists()) {
-                    FileUtils.forceDelete(file);
-            }
+        synchronized (firstOpen) {
+            if(!firstOpen) {
+                firstOpen = true;
 
-            if (!file.exists()) {
-                if (!file.getParentFile().exists()) {
-                    file.getParentFile().mkdirs();
+                file = new File(filePath);
+
+                try {
+                    if (file.exists()) {
+                        FileUtils.forceDelete(file);
+                    }
+
+                    if (!file.exists()) {
+                        if (!file.getParentFile().exists()) {
+                            file.getParentFile().mkdirs();
+                        }
+
+                        file.createNewFile();
+                    }
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-
-                file.createNewFile();
+            }else{
+                file = new File(filePath);
             }
-
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
