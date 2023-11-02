@@ -36,17 +36,22 @@ public class MyFileSource<OUT> extends RichFunction implements SourceFunction<OU
     protected int readPos,readEnd;
     protected List<String> lines;
     protected List<OUT> record;
-    @Override
-    public void init(int parallel, int index) {
-        record = new ArrayList<>();
-        LOGGER.info("Parallel {} index {}",parallel,index);
+
+    void init2(){
         synchronized (lineMap){
             if(!lineMap.containsKey(filePath)){
-                System.err.println("Parallel "+parallel+"; Index "+index);
                 lineMap.put(filePath, readFileLines(filePath));
             }
             lines = lineMap.get(filePath);
         }
+
+    }
+
+    @Override
+    public void init(int parallel, int index) {
+        record = new ArrayList<>();
+        LOGGER.info("Parallel {} index {}",parallel,index);
+        init2();
         int size = lines.size();
         readPos = Math.max (1, size *index /parallel);
         readEnd = Math.min(size*(index+1)/parallel,size);

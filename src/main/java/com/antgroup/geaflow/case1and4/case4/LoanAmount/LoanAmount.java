@@ -47,8 +47,14 @@ public class LoanAmount {
             DATA_PWD=args[0];
             RESULT_FILE_PATH=args[1];
         }
+        if (!DATA_PWD.endsWith("/")){
+            DATA_PWD = DATA_PWD + "/";
+        }
+        if (!RESULT_FILE_PATH.endsWith("/")){
+            RESULT_FILE_PATH=  RESULT_FILE_PATH+ "/";
+        }
         loanID2Amount = new ConcurrentHashMap<>();
-        Environment environment = EnvironmentUtil.loadEnvironment(args);
+        Environment environment = EnvironmentUtil.loadEnvironment(null);
         IPipelineResult result = LoanAmount.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();

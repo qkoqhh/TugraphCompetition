@@ -27,6 +27,7 @@ import com.antgroup.geaflow.view.graph.GraphViewDesc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.CharBuffer;
 import java.util.*;
 
 public class CaseThree {
@@ -42,8 +43,14 @@ public class CaseThree {
             DATA_PWD=args[0];
             OUTPUT_PWD=args[1];
         }
+        if (!DATA_PWD.endsWith("/")){
+            DATA_PWD = DATA_PWD + "/";
+        }
+        if (!OUTPUT_PWD.endsWith("/")){
+            OUTPUT_PWD = OUTPUT_PWD + "/";
+        }
 
-        Environment environment = EnvironmentUtil.loadEnvironment(args);
+        Environment environment = EnvironmentUtil.loadEnvironment(null);
         IPipelineResult result = CaseThree.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();
@@ -97,7 +104,7 @@ public class CaseThree {
             int iterationParallelism = conf.getInteger(MyConfigKeys.ITERATOR_PARALLELISM);
             GraphViewDesc graphViewDesc = GraphViewBuilder
                     .createGraphView(GraphViewBuilder.DEFAULT_GRAPH)
-                    .withShardNum(2)
+                    .withShardNum(iterationParallelism)
                     .withBackend(IViewDesc.BackendType.Memory)
                     .build();
             PGraphWindow<Long, Double, Double> graphWindow =

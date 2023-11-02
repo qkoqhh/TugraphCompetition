@@ -51,8 +51,14 @@ public class GuaranteeGraph {
             DATA_PWD=args[0];
             OUTPUT_PWD=args[1];
         }
+        if (!DATA_PWD.endsWith("/")){
+            DATA_PWD = DATA_PWD + "/";
+        }
+        if (!OUTPUT_PWD.endsWith("/")){
+            OUTPUT_PWD = OUTPUT_PWD + "/";
+        }
 
-        Environment environment = EnvironmentUtil.loadEnvironment(args);
+        Environment environment = EnvironmentUtil.loadEnvironment(null);
         IPipelineResult result = GuaranteeGraph.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();
