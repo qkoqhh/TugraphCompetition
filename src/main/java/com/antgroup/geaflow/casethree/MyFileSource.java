@@ -8,9 +8,7 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Serializable;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
 
@@ -48,8 +46,8 @@ public class MyFileSource<OUT> extends RichFunction implements SourceFunction<OU
             lines = lineMap.get(filePath);
         }
         int size = lines.size();
-        readPos = Math.max (1, size /parallel*index);
-        readEnd = Math.min(size/parallel*(index+1),size);
+        readPos = Math.max (1, size *index /parallel);
+        readEnd = Math.min(size*(index+1)/parallel,size);
         LOGGER.info("Index : {}  Size : {}",index, readEnd-readPos);
         long start = System.currentTimeMillis();
         for (int i=readPos ; i<readEnd ; i++){
