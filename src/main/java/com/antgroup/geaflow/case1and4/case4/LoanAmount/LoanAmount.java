@@ -52,9 +52,9 @@ public class LoanAmount {
         IPipelineResult result = LoanAmount.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();
-        for(Long loanID:loanID2Amount.keySet()){
+        /*for(Long loanID:loanID2Amount.keySet()){
             LOGGER.info("ID: "+loanID+", Amount: "+loanID2Amount.get(loanID));
-        }
+        }*/
     }
 
     public static IPipelineResult submit(Environment environment) {
@@ -66,7 +66,7 @@ public class LoanAmount {
         pipeline.submit((PipelineTask) pipelineTaskCxt -> {
             Configuration conf = pipelineTaskCxt.getConfig();
             PWindowSource<IVertex<Long,Double>> prVertices =
-                    pipelineTaskCxt.buildSource(new LoanAmountSource<IVertex<Long,Double>>(DATA_PWD+"test_Loan.csv",
+                    pipelineTaskCxt.buildSource(new LoanAmountSource<IVertex<Long,Double>>(DATA_PWD+"Loan.csv",
                             (line,mp) -> {
                                         String[] fields = line.split("\\|");
                                         mp.put(Long.valueOf(fields[0]), Double.valueOf(fields[1]));

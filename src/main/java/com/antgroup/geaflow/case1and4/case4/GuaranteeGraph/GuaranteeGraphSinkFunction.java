@@ -18,7 +18,7 @@ import java.util.Vector;
 
 public class GuaranteeGraphSinkFunction extends RichFunction implements SinkFunction<IVertex<Long,VertexInfo>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GuaranteeGraphSinkFunction.class);
-    public static final int CASEID=2;
+    public static final int CASEID=4;
     public String filePath;
     public File file;
     RuntimeContext runtimeContext;

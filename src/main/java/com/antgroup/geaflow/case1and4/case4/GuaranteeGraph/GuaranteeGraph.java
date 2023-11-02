@@ -66,7 +66,7 @@ public class GuaranteeGraph {
         pipeline.submit(pipelineTaskContext -> {
             Configuration conf = pipelineTaskContext.getConfig();
             PWindowSource<IVertex<Long, VertexInfo>> prVertices = pipelineTaskContext.buildSource(
-                    new NormalSource<>(DATA_PWD + "test_Person.csv",
+                    new NormalSource<>(DATA_PWD + "Person.csv",
                             line -> {
                                 String[] fields = line.split("\\|");
                                 IVertex<Long, VertexInfo> vertex = new ValueVertex<>(
@@ -78,7 +78,7 @@ public class GuaranteeGraph {
             ).withParallelism(conf.getInteger(Case4ConfigKeys.SOURCE_PARALLELISM));
 
             PWindowSource<IEdge<Long, Integer>> prEdges = pipelineTaskContext.buildSource(
-                    new NormalSource<>(DATA_PWD + "test_PersonGuaranteePerson.csv",
+                    new NormalSource<>(DATA_PWD + "PersonGuaranteePerson.csv",
                             line -> {
                                 String[] fields = line.split("\\|");
                                 IEdge<Long, Integer> inEdge = new ValueEdge<>(
@@ -161,7 +161,7 @@ public class GuaranteeGraph {
                     if(msg.getF1()<oldDist){ // Maybe a useful message
                         nowInfo.minDistMap.put(msg.getF0(),msg.getF1());
                         if(oldDist==Integer.MAX_VALUE) {
-                            nowInfo.value += PersonLoan.personID2loanAmount.get(msg.getF0());
+                            nowInfo.value += PersonLoan.personID2loanAmount.getOrDefault(msg.getF0(),0.0);
                         }
                         if(msg.getF1()<3) {
                             for(IEdge<Long,Integer> inEdge:this.context.edges().getInEdges()){

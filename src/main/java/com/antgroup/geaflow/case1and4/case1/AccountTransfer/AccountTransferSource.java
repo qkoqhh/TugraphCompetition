@@ -28,7 +28,7 @@ public class AccountTransferSource<OUT> extends RichFunction implements SourceFu
     public AccountTransferSource(String filePath, AccountTransferSource.FileLineParser<OUT> parser, Map<Long,List<Long>> mp) {
         this.filePath = filePath;
         this.parser = parser;
-        AccountTransferSource.transferPredecessors =mp;
+        transferPredecessors =mp;
     }
 
     @Override

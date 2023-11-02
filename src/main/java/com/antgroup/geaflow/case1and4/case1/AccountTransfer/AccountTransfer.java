@@ -57,9 +57,9 @@ public class AccountTransfer {
         IPipelineResult result = AccountTransfer.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();
-        for(Long AccountID: accountID2TransferPreds.keySet()){
+        /*for(Long AccountID: accountID2TransferPreds.keySet()){
             LOGGER.info("Account ID: "+AccountID+", Transfer predecessors: "+ accountID2TransferPreds.get(AccountID));
-        }
+        }*/
     }
 
     public static IPipelineResult submit(Environment environment) {
@@ -71,13 +71,15 @@ public class AccountTransfer {
         pipeline.submit((PipelineTask) pipelineTaskCxt -> {
             Configuration conf = pipelineTaskCxt.getConfig();
             PWindowSource<IVertex<Long,Double>> prVertices =
-                    pipelineTaskCxt.buildSource(new AccountTransferSource<IVertex<Long,Double>>(DATA_PWD+"test_AccountTransferAccount.csv",
+                    pipelineTaskCxt.buildSource(new AccountTransferSource<IVertex<Long,Double>>(DATA_PWD+"AccountTransferAccount.csv",
                                     (line, mp) -> {
                                         String[] fields = line.split("\\|");
-                                        accountID2TransferPreds.putIfAbsent(Long.getLong(fields[1]), new Vector<>());
-                                        accountID2TransferPreds.get(Long.getLong(fields[1])).add(Long.getLong(fields[0]));
+                                        if(!mp.containsKey(Long.valueOf(fields[1]))){
+                                            mp.put(Long.valueOf(fields[1]), new Vector<>());
+                                        }
+                                        mp.get(Long.valueOf(fields[1])).add(Long.valueOf(fields[0]));
                                         return Collections.emptyList();
-                                    }, accountID2TransferPreds), AllWindow.getInstance())
+                                    }, AccountTransfer.accountID2TransferPreds), AllWindow.getInstance())
                             .withParallelism(conf.getInteger(Case1ConfigKeys.SOURCE_PARALLELISM));
 
             PWindowSource<IEdge<Long, Double>> prEdges = pipelineTaskCxt.buildSource(
