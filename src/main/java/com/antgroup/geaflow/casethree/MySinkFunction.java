@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.text.NumberFormat;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
@@ -61,18 +62,21 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
         }
     }
 
+    static final NumberFormat format = NumberFormat.getInstance();
+    static {
+        format.setMaximumFractionDigits(2);
+    }
     @Override
     public void close() {
         LOGGER.info("Close");
-        list.sort(Comparator.comparing(o->o.getId()));
+        list.sort(Comparator.comparing(IVertex::getId));
         StringBuilder stringBuilder=new StringBuilder();
         try {
             stringBuilder.append("id|value\n");
-//            FileUtils.write(file,"id|value\n",Charset.defaultCharset());
             list.forEach(v->{
                 stringBuilder.append(v.getId());
                 stringBuilder.append('|');
-                stringBuilder.append(String.format("%.2f",v.getValue()));
+                stringBuilder.append(format.format(v.getValue()));
                 stringBuilder.append('\n');
             });
             FileUtils.write(file,stringBuilder.toString(),Charset.defaultCharset(),true);
