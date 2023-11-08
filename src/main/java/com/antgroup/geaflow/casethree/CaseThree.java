@@ -69,9 +69,9 @@ public class CaseThree {
             PWindowSource<IVertex<Long, Double>> prVertices = pipelineTaskContext.buildSource(
                     new MyFileSource<>(DATA_PWD + "Account.csv",
                             line -> {
-                                String[] fileds = line.split("\\|");
+                                int first=line.indexOf('|');
                                 IVertex<Long, Double> vertex = new ValueVertex<>(
-                                        Long.valueOf(fileds[0]),
+                                        Long.valueOf(line.substring(0,first)),
                                         -1D
                                 );
                                 return Collections.singleton(vertex);
@@ -81,11 +81,13 @@ public class CaseThree {
             PWindowSource<IEdge<Long, Double>> prEdges = pipelineTaskContext.buildSource(
                     new MyFileSource<>(DATA_PWD + "AccountTransferAccount.csv",
                             line -> {
-                                String[] fields = line.split("\\|");
+                                int first=line.indexOf('|');
+                                int second=line.indexOf('|',first+1);
+                                int third=line.indexOf('|',second+1);
                                 IEdge<Long, Double> outEdge = new ValueEdge<>(
-                                        Long.parseLong(fields[0]),
-                                        Long.parseLong(fields[1]),
-                                        Double.parseDouble(fields[2])
+                                        Long.parseLong(line.substring(0,first)),
+                                        Long.parseLong(line.substring(first+1,second)),
+                                        Double.parseDouble(line.substring(second+1,third))
                                 );
                                 IEdge<Long, Double> inEdge = new ValueEdge<>(
                                         outEdge.getTargetId(),
