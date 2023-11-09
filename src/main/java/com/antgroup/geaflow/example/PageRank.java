@@ -47,7 +47,7 @@ public class PageRank {
     private static final double alpha = 0.85;
 
     public static void main(String[] args) {
-        Environment environment = EnvironmentUtil.loadEnvironment(null);
+        Environment environment = EnvironmentUtil.loadEnvironment(new String[0]);
         IPipelineResult result = PageRank.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();

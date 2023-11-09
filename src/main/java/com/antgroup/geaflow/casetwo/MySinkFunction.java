@@ -27,7 +27,7 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     @Override
     public void open(RuntimeContext runtimeContext) {
         this.runtimeContext=runtimeContext;
-        filePath = String.format("%s/result%s.csv", runtimeContext.getConfiguration().getString("output.dir"), CASEID);
+        filePath = String.format("%sresult%s.csv", runtimeContext.getConfiguration().getString("output.dir"), CASEID);
         LOGGER.info("sink file name {}", filePath);
 
         synchronized (firstOpen) {

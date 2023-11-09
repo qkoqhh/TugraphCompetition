@@ -1,5 +1,6 @@
 package com.antgroup.geaflow.case1and4.case4.PersonLoan;
 
+import com.antgroup.geaflow.Util.Util;
 import com.antgroup.geaflow.api.function.io.SinkFunction;
 import com.antgroup.geaflow.api.graph.PGraphWindow;
 import com.antgroup.geaflow.api.graph.compute.VertexCentricCompute;
@@ -51,14 +52,10 @@ public class PersonLoan {
             DATA_PWD=args[0];
             RESULT_FILE_PATH=args[1];
         }
-        if (!DATA_PWD.endsWith("/")){
-            DATA_PWD = DATA_PWD + "/";
-        }
-        if (!RESULT_FILE_PATH.endsWith("/")){
-             RESULT_FILE_PATH=  RESULT_FILE_PATH+ "/";
-        }
+        DATA_PWD = Util.flushDir(DATA_PWD);
+        RESULT_FILE_PATH = Util.flushDir(RESULT_FILE_PATH);
         personID2loanAmount = new ConcurrentHashMap<>();
-        Environment environment = EnvironmentUtil.loadEnvironment(null);
+        Environment environment = EnvironmentUtil.loadEnvironment(new String[0]);
         IPipelineResult result = PersonLoan.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();

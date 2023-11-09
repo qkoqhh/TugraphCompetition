@@ -1,5 +1,6 @@
 package com.antgroup.geaflow.case1and4.case1.PersonValue;
 
+import com.antgroup.geaflow.Util.Util;
 import com.antgroup.geaflow.api.function.io.SinkFunction;
 import com.antgroup.geaflow.api.graph.PGraphWindow;
 import com.antgroup.geaflow.api.graph.compute.VertexCentricCompute;
@@ -46,15 +47,11 @@ public class PersonValue {
             DATA_PWD=args[0];
             OUTPUT_PWD=args[1];
         }
+        DATA_PWD= Util.flushDir(DATA_PWD);
+        OUTPUT_PWD= Util.flushDir(OUTPUT_PWD);
 
-        if (!DATA_PWD.endsWith("/")){
-            DATA_PWD = DATA_PWD + "/";
-        }
-        if (!OUTPUT_PWD.endsWith("/")){
-            OUTPUT_PWD = OUTPUT_PWD + "/";
-        }
 
-        Environment environment = EnvironmentUtil.loadEnvironment(null);
+        Environment environment = EnvironmentUtil.loadEnvironment(new String[0]);
         IPipelineResult result = PersonValue.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();

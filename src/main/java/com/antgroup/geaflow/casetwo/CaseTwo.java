@@ -1,5 +1,6 @@
 package com.antgroup.geaflow.casetwo;
 
+import com.antgroup.geaflow.Util.Util;
 import com.antgroup.geaflow.api.function.io.SinkFunction;
 import com.antgroup.geaflow.api.graph.PGraphWindow;
 import com.antgroup.geaflow.api.graph.compute.VertexCentricCompute;
@@ -49,14 +50,10 @@ public class CaseTwo {
             DATA_PWD = args[0];
             OUTPUT_PWD = args[1];
         }
-        if (!DATA_PWD.endsWith("/")){
-            DATA_PWD = DATA_PWD + "/";
-        }
-        if (!OUTPUT_PWD.endsWith("/")){
-            OUTPUT_PWD = OUTPUT_PWD + "/";
-        }
+        DATA_PWD= Util.flushDir(DATA_PWD);
+        OUTPUT_PWD= Util.flushDir(OUTPUT_PWD);
 
-        Environment environment = EnvironmentUtil.loadEnvironment(null);
+        Environment environment = EnvironmentUtil.loadEnvironment(new String[0]);
         IPipelineResult result = CaseTwo.submit(environment);
         PipelineResultCollect.get(result);
         environment.shutdown();
