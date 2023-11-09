@@ -42,6 +42,13 @@
                             <goal>single</goal>
                         </goals>
                         <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>
+                                        com.antgroup.geaflow.MainRun
+                                    </mainClass>
+                                </manifest>
+                            </archive>
                             <descriptorRefs>
                                 <descriptorRef>jar-with-dependencies</descriptorRef>
                             </descriptorRefs>
