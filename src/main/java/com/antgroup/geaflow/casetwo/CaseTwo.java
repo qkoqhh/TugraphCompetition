@@ -105,7 +105,7 @@ public class CaseTwo {
             int iterationParallelism = conf.getInteger(MyConfigKeys.ITERATOR_PARALLELISM);
             GraphViewDesc graphViewDesc = GraphViewBuilder
                     .createGraphView(GraphViewBuilder.DEFAULT_GRAPH)
-                    .withShardNum(2)
+                    .withShardNum(iterationParallelism)
                     .withBackend(IViewDesc.BackendType.Memory)
                     .build();
             PGraphWindow<Long, VertexValue, Object> graphWindow =

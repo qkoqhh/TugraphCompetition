@@ -77,9 +77,7 @@ public class AccountTransfer {
                     pipelineTaskCxt.buildSource(new AccountTransferSource<IVertex<Long,Double>>(DATA_PWD+"AccountTransferAccount.csv",
                                     (line, mp) -> {
                                         String[] fields = line.split("\\|");
-                                        if(!mp.containsKey(Long.valueOf(fields[1]))){
-                                            mp.put(Long.valueOf(fields[1]), new Vector<>());
-                                        }
+                                        mp.putIfAbsent(Long.valueOf(fields[1]),new Vector<>());
                                         mp.get(Long.valueOf(fields[1])).add(Long.valueOf(fields[0]));
                                         return Collections.emptyList();
                                     }, AccountTransfer.accountID2TransferPreds), AllWindow.getInstance())
@@ -93,7 +91,7 @@ public class AccountTransfer {
             int iterationParallelism = conf.getInteger(Case1ConfigKeys.ITERATOR_PARALLELISM);
             GraphViewDesc graphViewDesc = GraphViewBuilder
                     .createGraphView(GraphViewBuilder.DEFAULT_GRAPH)
-                    .withShardNum(2)
+                    .withShardNum(iterationParallelism)
                     .withBackend(IViewDesc.BackendType.Memory)
                     .build();
             PGraphWindow<Long, Double, Double> graphWindow =

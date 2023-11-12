@@ -100,7 +100,7 @@ public class GuaranteeGraph {
             int iterationParallelism = conf.getInteger(Case4ConfigKeys.ITERATOR_PARALLELISM);
             GraphViewDesc graphViewDesc = GraphViewBuilder
                     .createGraphView(GraphViewBuilder.DEFAULT_GRAPH)
-                    .withShardNum(2)
+                    .withShardNum(iterationParallelism)
                     .withBackend(IViewDesc.BackendType.Memory)
                     .build();
             PGraphWindow<Long, VertexInfo, Integer> graphWindow =

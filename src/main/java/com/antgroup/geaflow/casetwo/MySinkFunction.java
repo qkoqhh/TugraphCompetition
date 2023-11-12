@@ -14,6 +14,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class MySinkFunction extends RichFunction implements SinkFunction<IVertex<Long, VertexValue>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(MySinkFunction.class);
@@ -23,12 +24,14 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     RuntimeContext runtimeContext;
 
     static Boolean firstOpen=false;
+    static AtomicInteger runningThread=new AtomicInteger(0);
 
     @Override
     public void open(RuntimeContext runtimeContext) {
         this.runtimeContext=runtimeContext;
         filePath = String.format("%sresult%s.csv", runtimeContext.getConfiguration().getString("output.dir"), CASEID);
         LOGGER.info("sink file name {}", filePath);
+        runningThread.addAndGet(1);
 
         synchronized (firstOpen) {
             if(!firstOpen) {
@@ -60,25 +63,27 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
 
     @Override
     public void close() {
-        LOGGER.info("Close");
-        list.sort(Comparator.comparing(IVertex::getId));
-        StringBuilder stringBuilder=new StringBuilder();
-        try {
-            stringBuilder.append("id|value\n");
+        if(runningThread.addAndGet(-1)==0) {
+            LOGGER.info("Close");
+            list.sort(Comparator.comparing(IVertex::getId));
+            StringBuilder stringBuilder = new StringBuilder();
+            try {
+                stringBuilder.append("id|value\n");
 //            FileUtils.write(file,"id|value\n",Charset.defaultCharset());
-            list.forEach(v->{
-                stringBuilder.append(v.getId());
-                stringBuilder.append('|');
-                stringBuilder.append(v.getValue().ret);
-                stringBuilder.append('\n');
-            });
-            FileUtils.write(file,stringBuilder.toString(),Charset.defaultCharset(),true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+                list.forEach(v -> {
+                    stringBuilder.append(v.getId());
+                    stringBuilder.append('|');
+                    stringBuilder.append(v.getValue().ret);
+                    stringBuilder.append('\n');
+                });
+                FileUtils.write(file, stringBuilder.toString(), Charset.defaultCharset(), true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    List<IVertex<Long, VertexValue>> list=new Vector<>();
+    static List<IVertex<Long, VertexValue>> list=new Vector<>();
 
     @Override
     public void write(IVertex<Long, VertexValue> out) throws Exception {

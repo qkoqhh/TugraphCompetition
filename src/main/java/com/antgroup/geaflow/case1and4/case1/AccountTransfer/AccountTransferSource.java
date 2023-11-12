@@ -45,7 +45,7 @@ public class AccountTransferSource<OUT> extends RichFunction implements SourceFu
         LOGGER.info("Parallel {} index {}",parallel,index);
         synchronized (lineMap){
             if(!lineMap.containsKey(filePath)){
-                System.err.println("Parallel "+parallel+"; Index "+index);
+                LOGGER.info("LineMap::  Parallel "+parallel+"; Index "+index);
                 lineMap.put(filePath, readFileLines(filePath));
             }
             lines = lineMap.get(filePath);

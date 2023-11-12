@@ -77,10 +77,7 @@ public class PersonLoan {
                                     (line, mp) -> {
                                         String[] fields = line.split("\\|");
                                         Long personID=Long.valueOf(fields[0]), loanID=Long.valueOf(fields[1]);
-                                        if(!mp.containsKey(personID)){
-                                            mp.put(personID, LoanAmount.loanID2Amount.get(loanID));
-                                        }
-                                        else {
+                                        if (mp.putIfAbsent(personID, LoanAmount.loanID2Amount.get(loanID)) != null){
                                             mp.computeIfPresent(personID, (k, v) -> v + LoanAmount.loanID2Amount.get(loanID));
                                         }
                                         return Collections.emptyList();
@@ -95,7 +92,7 @@ public class PersonLoan {
             int iterationParallelism = conf.getInteger(Case4ConfigKeys.ITERATOR_PARALLELISM);
             GraphViewDesc graphViewDesc = GraphViewBuilder
                     .createGraphView(GraphViewBuilder.DEFAULT_GRAPH)
-                    .withShardNum(2)
+                    .withShardNum(iterationParallelism)
                     .withBackend(IViewDesc.BackendType.Memory)
                     .build();
             PGraphWindow<Long, Double, Double> graphWindow =

@@ -149,11 +149,12 @@ public class CaseThree {
         @Override
         public void compute(Long vertexId, Iterator<Object> messageIterator) {
             Double outEdgeAmount=0D, inEdgeAmount=0D;
-            for(IEdge<Long,Double> e:context.edges().getOutEdges()){
-                outEdgeAmount += e.getValue();
-            }
-            for(IEdge<Long,Double> e:context.edges().getInEdges()){
-                inEdgeAmount += e.getValue();
+            for(IEdge<Long,Double> e:context.edges().getEdges()){
+                if(e.getDirect()==EdgeDirection.IN){
+                    inEdgeAmount += e.getValue();
+                }else{
+                    outEdgeAmount += e.getValue();
+                }
             }
 
             if(inEdgeAmount < EPS || outEdgeAmount < EPS){
