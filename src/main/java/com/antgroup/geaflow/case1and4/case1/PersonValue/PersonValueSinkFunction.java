@@ -86,7 +86,7 @@ public class PersonValueSinkFunction extends RichFunction implements SinkFunctio
     @Override
     public void write(IVertex<Tuple<Long,Boolean>, Double> out) throws Exception {
         if(out.getId().getF1() && out.getValue()>0) {
-            list.add(new Tuple<>(out.getId().getF0(),out.getValue()));
+            list.add(new Tuple<>(out.getId().getF0(),out.getValue()/100000000));
         }
     }
 }
