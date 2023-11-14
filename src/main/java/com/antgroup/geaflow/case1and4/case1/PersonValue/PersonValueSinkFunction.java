@@ -3,6 +3,7 @@ package com.antgroup.geaflow.case1and4.case1.PersonValue;
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
 import com.antgroup.geaflow.api.function.io.SinkFunction;
+import com.antgroup.geaflow.case1and4.case1.Case1ConfigKeys;
 import com.antgroup.geaflow.case1and4.case4.GuaranteeGraph.GuaranteeGraphSinkFunction;
 import com.antgroup.geaflow.case1and4.case4.GuaranteeGraph.VertexInfo;
 import com.antgroup.geaflow.common.tuple.Tuple;
@@ -18,6 +19,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class PersonValueSinkFunction extends RichFunction implements SinkFunction<IVertex<Tuple<Long,Boolean>,Double>> {
 
@@ -28,6 +30,7 @@ public class PersonValueSinkFunction extends RichFunction implements SinkFunctio
     RuntimeContext runtimeContext;
 
     static Boolean firstOpen=false;
+    static AtomicInteger runningThread=new AtomicInteger((Integer) Case1ConfigKeys.SINK_PARALLELISM.getDefaultValue());
     @Override
     public void open(RuntimeContext runtimeContext) {
         this.runtimeContext=runtimeContext;
@@ -64,25 +67,27 @@ public class PersonValueSinkFunction extends RichFunction implements SinkFunctio
 
     @Override
     public void close() {
-        LOGGER.info("Close");
-        list.sort(Comparator.comparing(Tuple::getF0));
-        StringBuilder stringBuilder=new StringBuilder();
-        try {
-            stringBuilder.append("id|value\n");
+        if (runningThread.addAndGet(-1)==0) {
+            LOGGER.info("Close");
+            list.sort(Comparator.comparing(Tuple::getF0));
+            StringBuilder stringBuilder = new StringBuilder();
+            try {
+                stringBuilder.append("id|value\n");
 //            FileUtils.write(file,"id|value\n",Charset.defaultCharset());
-            list.forEach(v->{
-                stringBuilder.append(v.getF0());
-                stringBuilder.append("|");
-                stringBuilder.append(String.format("%.2f",v.getF1()));
-                stringBuilder.append("\n");
-            });
-            FileUtils.write(file,stringBuilder.toString(), Charset.defaultCharset(),true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+                list.forEach(v -> {
+                    stringBuilder.append(v.getF0());
+                    stringBuilder.append("|");
+                    stringBuilder.append(String.format("%.2f", v.getF1()));
+                    stringBuilder.append("\n");
+                });
+                FileUtils.write(file, stringBuilder.toString(), Charset.defaultCharset(), true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    List<Tuple<Long, Double>> list=new Vector<>();
+    static List<Tuple<Long, Double>> list=new Vector<>();
     @Override
     public void write(IVertex<Tuple<Long,Boolean>, Double> out) throws Exception {
         if(out.getId().getF1() && out.getValue()>0) {

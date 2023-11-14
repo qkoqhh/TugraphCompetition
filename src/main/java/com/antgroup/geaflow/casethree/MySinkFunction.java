@@ -27,6 +27,7 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     RuntimeContext runtimeContext;
 
     static Boolean firstOpen=false;
+    static AtomicInteger runningThread=new AtomicInteger((Integer)MyConfigKeys.SINK_PARALLELISM.getDefaultValue());
 
     @Override
     public void open(RuntimeContext runtimeContext) {
@@ -65,27 +66,31 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     static final NumberFormat format = NumberFormat.getInstance();
     static {
         format.setMaximumFractionDigits(2);
+        format.setMinimumFractionDigits(2);
+        format.setGroupingUsed(false);
     }
     @Override
     public void close() {
-        LOGGER.info("Close");
-        list.sort(Comparator.comparing(IVertex::getId));
-        StringBuilder stringBuilder=new StringBuilder();
-        try {
-            stringBuilder.append("id|value\n");
-            list.forEach(v->{
-                stringBuilder.append(v.getId());
-                stringBuilder.append('|');
-                stringBuilder.append(format.format(v.getValue()));
-                stringBuilder.append('\n');
-            });
-            FileUtils.write(file,stringBuilder.toString(),Charset.defaultCharset(),true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        if(runningThread.addAndGet(-1)==0) {
+            LOGGER.info("Close");
+            list.sort(Comparator.comparing(IVertex::getId));
+            StringBuilder stringBuilder = new StringBuilder();
+            try {
+                stringBuilder.append("id|value\n");
+                list.forEach(v -> {
+                    stringBuilder.append(v.getId());
+                    stringBuilder.append('|');
+                    stringBuilder.append(format.format(v.getValue()));
+                    stringBuilder.append('\n');
+                });
+                FileUtils.write(file, stringBuilder.toString(), Charset.defaultCharset(), true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    List<IVertex<Long,Double>> list=new Vector();
+    static List<IVertex<Long,Double>> list=new Vector();
 
     @Override
     public void write(IVertex<Long,Double> out) throws Exception {
