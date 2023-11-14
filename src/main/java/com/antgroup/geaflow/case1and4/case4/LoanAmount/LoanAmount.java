@@ -69,13 +69,13 @@ public class LoanAmount {
         pipeline.submit((PipelineTask) pipelineTaskCxt -> {
             Configuration conf = pipelineTaskCxt.getConfig();
             PWindowSource<IVertex<Long,Double>> prVertices =
-                            pipelineTaskCxt.buildSource(new LoanAmountSource<IVertex<Long,Double>>(DATA_PWD+"Loan.csv",
-                                            (line,mp) -> {
-                                                String[] fields = line.split("\\|");
-                                                mp.put(Long.valueOf(fields[0]), Double.valueOf(fields[1]));
-                                                return Collections.emptyList();
-                                            }, loanID2Amount), AllWindow.getInstance())
-                                    .withParallelism(conf.getInteger(Case4ConfigKeys.SOURCE_PARALLELISM));
+                    pipelineTaskCxt.buildSource(new LoanAmountSource<IVertex<Long,Double>>(DATA_PWD+"Loan.csv",
+                            (line,mp) -> {
+                                        String[] fields = line.split("\\|");
+                                        mp.put(Long.valueOf(fields[0]), Double.valueOf(fields[1]));
+                                        return Collections.emptyList();
+                                    }, loanID2Amount), AllWindow.getInstance())
+                            .withParallelism(conf.getInteger(Case4ConfigKeys.SOURCE_PARALLELISM));
 
             PWindowSource<IEdge<Long, Double>> prEdges = pipelineTaskCxt.buildSource(
                     new NullSource<IEdge<Long,Double>>()
