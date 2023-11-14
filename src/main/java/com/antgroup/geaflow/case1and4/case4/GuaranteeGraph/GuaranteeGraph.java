@@ -159,7 +159,6 @@ public class GuaranteeGraph {
             else{
                 while(messageIterator.hasNext()){
                     Tuple<Long,Integer> msg=messageIterator.next();
-                    boolean spread=false;
                     int oldDist=nowInfo.minDistMap.getOrDefault(msg.getF0(),Integer.MAX_VALUE);
                     if(msg.getF1()<oldDist){ // Maybe a useful message
                         nowInfo.minDistMap.put(msg.getF0(),msg.getF1());
