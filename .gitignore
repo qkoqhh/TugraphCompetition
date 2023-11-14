@@ -3,3 +3,5 @@ target
 *.zip
 *.jar
 std-tmp
+/src/main/resources/snapshot/
+/out/
