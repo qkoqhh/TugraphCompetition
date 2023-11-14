@@ -3,6 +3,7 @@ package com.antgroup.geaflow.case1and4.case4.GuaranteeGraph;
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
 import com.antgroup.geaflow.api.function.io.SinkFunction;
+import com.antgroup.geaflow.case1and4.case4.Case4ConfigKeys;
 import com.antgroup.geaflow.casetwo.VertexValue;
 import com.antgroup.geaflow.model.graph.vertex.IVertex;
 import org.apache.commons.io.FileUtils;
@@ -15,6 +16,7 @@ import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Vector;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class GuaranteeGraphSinkFunction extends RichFunction implements SinkFunction<IVertex<Long,VertexInfo>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(GuaranteeGraphSinkFunction.class);
@@ -24,6 +26,7 @@ public class GuaranteeGraphSinkFunction extends RichFunction implements SinkFunc
     RuntimeContext runtimeContext;
 
     static Boolean firstOpen=false;
+    static AtomicInteger runningThread=new AtomicInteger((Integer) Case4ConfigKeys.SINK_PARALLELISM.getDefaultValue());
 
     @Override
     public void open(RuntimeContext runtimeContext) {
@@ -61,25 +64,27 @@ public class GuaranteeGraphSinkFunction extends RichFunction implements SinkFunc
 
     @Override
     public void close() {
-        LOGGER.info("Close");
-        list.sort(Comparator.comparing(IVertex::getId));
-        StringBuilder stringBuilder=new StringBuilder();
-        try {
-            stringBuilder.append("id|value\n");
+        if(runningThread.addAndGet(-1)==0) {
+            LOGGER.info("Close");
+            list.sort(Comparator.comparing(IVertex::getId));
+            StringBuilder stringBuilder = new StringBuilder();
+            try {
+                stringBuilder.append("id|value\n");
 //            FileUtils.write(file,"id|value\n",Charset.defaultCharset());
-            list.forEach(v->{
-                stringBuilder.append(v.getId());
-                stringBuilder.append('|');
-                stringBuilder.append(String.format("%.2f",v.getValue().value/100000000));
-                stringBuilder.append('\n');
-            });
-            FileUtils.write(file,stringBuilder.toString(), Charset.defaultCharset(),true);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+                list.forEach(v -> {
+                    stringBuilder.append(v.getId());
+                    stringBuilder.append('|');
+                    stringBuilder.append(String.format("%.2f", v.getValue().value));
+                    stringBuilder.append('\n');
+                });
+                FileUtils.write(file, stringBuilder.toString(), Charset.defaultCharset(), true);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
-    List<IVertex<Long, VertexInfo>> list=new Vector<>();
+    static List<IVertex<Long, VertexInfo>> list=new Vector<>();
 
     @Override
     public void write(IVertex<Long, VertexInfo> out) throws Exception {

@@ -24,14 +24,13 @@ public class MySinkFunction extends RichFunction implements SinkFunction<IVertex
     RuntimeContext runtimeContext;
 
     static Boolean firstOpen=false;
-    static AtomicInteger runningThread=new AtomicInteger(0);
+    static AtomicInteger runningThread=new AtomicInteger((Integer)MyConfigKeys.SINK_PARALLELISM.getDefaultValue());
 
     @Override
     public void open(RuntimeContext runtimeContext) {
         this.runtimeContext=runtimeContext;
         filePath = String.format("%sresult%s.csv", runtimeContext.getConfiguration().getString("output.dir"), CASEID);
         LOGGER.info("sink file name {}", filePath);
-        runningThread.addAndGet(1);
 
         synchronized (firstOpen) {
             if(!firstOpen) {
