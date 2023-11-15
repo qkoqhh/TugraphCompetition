@@ -154,17 +154,9 @@ public class CaseTwo {
             if (iteration == 1) {
                 for (IEdge<Long, Object> e : context.edges().getEdges()) {
                     if (e.getDirect() == EdgeDirection.IN) {
-                        if(vv.in.containsKey(e.getTargetId())){
-                            vv.in.put(e.getTargetId(),vv.in.get(e.getTargetId())+1);
-                        }else{
-                            vv.in.put(e.getTargetId(),1);
-                        }
+                        vv.in.compute(e.getTargetId(), (k, v) -> (v == null) ? 1 : v + 1);
                     } else {
-                        if (vv.out.containsKey(e.getTargetId())){
-                            vv.out.put(e.getTargetId(), vv.out.get(e.getTargetId())+1);
-                        }else{
-                            vv.out.put(e.getTargetId(),1);
-                        }
+                        vv.out.compute(e.getTargetId(), (k, v) -> (v == null) ? 1 : v + 1);
                     }
                 }
                 for (IEdge<Long, Object> e : context.edges().getInEdges()) {
@@ -173,27 +165,19 @@ public class CaseTwo {
             } else if (iteration == 2) {
                 Map<Long,Integer>mp=new HashMap<>();
                 messageIterator.forEachRemaining(obj -> {
-                    Map<Long,Integer> out = (Map<Long,Integer>) obj, in = vv.in;
+                    Map<Long, Integer> out = (Map<Long, Integer>) obj, in = vv.in;
                     if (in.size() < out.size()) {
-                        in.forEach((k,v) -> {
-                            if(out.containsKey(k)){
-                                int _v=out.get(k);
-                                if(mp.containsKey(k)){
-                                    mp.put(k,mp.get(k)+v*_v);
-                                }else{
-                                    mp.put(k,v*_v);
-                                }
+                        in.forEach((k, v) -> {
+                            if (out.containsKey(k)) {
+                                int _v = out.get(k);
+                                mp.compute(k, (key, value) -> ((value == null) ? 0 : value) + v * _v);
                             }
                         });
-                    }else{
-                        out.forEach((k,v)->{
-                            if(in.containsKey(k)){
-                                int _v=in.get(k);
-                                if(mp.containsKey(k)){
-                                    mp.put(k,mp.get(k)+v*_v);
-                                }else{
-                                    mp.put(k,v*_v);
-                                }
+                    } else {
+                        out.forEach((k, v) -> {
+                            if (in.containsKey(k)) {
+                                int _v = in.get(k);
+                                mp.compute(k, (key, value) -> ((value == null) ? 0 : value) + v * _v);
                             }
                         });
                     }
