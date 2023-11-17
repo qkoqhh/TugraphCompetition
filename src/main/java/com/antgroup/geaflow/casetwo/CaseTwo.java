@@ -9,6 +9,7 @@ import com.antgroup.geaflow.api.graph.function.vc.VertexCentricComputeFunction;
 import com.antgroup.geaflow.api.pdata.stream.window.PWindowSource;
 import com.antgroup.geaflow.api.window.impl.AllWindow;
 import com.antgroup.geaflow.common.config.Configuration;
+import com.antgroup.geaflow.common.tuple.Tuple;
 import com.antgroup.geaflow.env.Environment;
 import com.antgroup.geaflow.example.function.AbstractVcFunc;
 import com.antgroup.geaflow.example.function.FileSink;
@@ -70,14 +71,21 @@ public class CaseTwo {
         pipeline.submit(pipelineTaskContext -> {
             Configuration conf = pipelineTaskContext.getConfig();
             PWindowSource<IVertex<Long, VertexValue>> prVertices = pipelineTaskContext.buildSource(
-                    new MyFileSource<>(DATA_PWD + "Account.csv",
+                    new MyFileSource<>(DATA_PWD + "AccountTransferAccount.csv",
                             line -> {
                                 String[] fileds = line.split("\\|");
-                                IVertex<Long, VertexValue> vertex = new ValueVertex<>(
+                                List<IVertex<Long, VertexValue>> retList=new ArrayList<>();
+                                IVertex<Long, VertexValue> vertex0 = new ValueVertex<>(
                                         Long.valueOf(fileds[0]),
                                         new VertexValue()
                                 );
-                                return Collections.singletonList(vertex);
+                                IVertex<Long, VertexValue> vertex1 = new ValueVertex<>(
+                                        Long.valueOf(fileds[1]),
+                                        new VertexValue()
+                                );
+                                retList.add(vertex0);
+                                retList.add(vertex1);
+                                return retList;
                             }), AllWindow.getInstance()
             ).withParallelism(conf.getInteger(MyConfigKeys.SOURCE_PARALLELISM));
 
@@ -154,37 +162,76 @@ public class CaseTwo {
             if (iteration == 1) {
                 for (IEdge<Long, Object> e : context.edges().getEdges()) {
                     if (e.getDirect() == EdgeDirection.IN) {
-                        vv.in.compute(e.getTargetId(), (k, v) -> (v == null) ? 1 : v + 1);
+//                        if(vv.in.containsKey(e.getTargetId())){
+//                            vv.in.put(e.getTargetId(),vv.in.get(e.getTargetId())+1);
+//                        }else{
+//                            vv.in.put(e.getTargetId(),1);
+//                        }
+                        if(e.getTargetId()<vertexId){
+                            vv.in.compute(e.getTargetId(),(k,v)->(v==null)?1:(v+1));
+                        }
                     } else {
-                        vv.out.compute(e.getTargetId(), (k, v) -> (v == null) ? 1 : v + 1);
+//                        if (vv.out.containsKey(e.getTargetId())){
+//                            vv.out.put(e.getTargetId(), vv.out.get(e.getTargetId())+1);
+//                        }else{
+//                            vv.out.put(e.getTargetId(),1);
+//                        }
+                        if(e.getTargetId()<vertexId){
+                            vv.out.compute(e.getTargetId(),(k,v)->(v==null)?1:(v+1));
+                        }
                     }
                 }
+                Tuple<Long,Map<Long,Integer> > msg=new Tuple<>(vertexId,vv.out);
                 for (IEdge<Long, Object> e : context.edges().getInEdges()) {
-                    context.sendMessage(e.getTargetId(), vv.out);
+                    context.sendMessage(e.getTargetId(), msg);
                 }
             } else if (iteration == 2) {
                 Map<Long,Integer>mp=new HashMap<>();
                 messageIterator.forEachRemaining(obj -> {
-                    Map<Long, Integer> out = (Map<Long, Integer>) obj, in = vv.in;
+                    long succ= ((Tuple<Long, Map<Long, Integer>>) obj).getF0();
+                    Map<Long,Integer> out =  ((Tuple<Long,Map<Long,Integer>>)obj).getF1(), in = vv.in;
                     if (in.size() < out.size()) {
-                        in.forEach((k, v) -> {
-                            if (out.containsKey(k)) {
-                                int _v = out.get(k);
-                                mp.compute(k, (key, value) -> ((value == null) ? 0 : value) + v * _v);
+                        in.forEach((k,v) -> {
+                            if(out.containsKey(k)){
+//                                int _v=out.get(k);
+//                                if(mp.containsKey(k)){
+//                                    mp.put(k,mp.get(k)+v*_v);
+//                                }else{
+//                                    mp.put(k,v*_v);
+//                                }
+                                int tmp=out.get(k)*v;
+//                                mp.compute(k,(key,value)->(value==null)?tmp:(value+tmp));
+//                                mp.compute(succ,(key,value)->(value==null)?tmp:(value+tmp));
+//                                mp.compute(vertexId,(key,value)->(value==null)?tmp:(value+tmp));
+                                context.sendMessage(k,tmp);
+                                context.sendMessage(succ,tmp);
+                                context.sendMessage(vertexId,tmp);
                             }
+
                         });
-                    } else {
-                        out.forEach((k, v) -> {
-                            if (in.containsKey(k)) {
-                                int _v = in.get(k);
-                                mp.compute(k, (key, value) -> ((value == null) ? 0 : value) + v * _v);
+                    }else{
+                        out.forEach((k,v)->{
+                            if(in.containsKey(k)){
+//                                int _v=in.get(k);
+//                                if(mp.containsKey(k)){
+//                                    mp.put(k,mp.get(k)+v*_v);
+//                                }else{
+//                                    mp.put(k,v*_v);
+//                                }
+                                int tmp=in.get(k)*v;
+//                                mp.compute(k,(key,value)->(value==null)?tmp:(value+tmp));
+//                                mp.compute(succ,(key,value)->(value==null)?tmp:(value+tmp));
+//                                mp.compute(vertexId,(key,value)->(value==null)?tmp:(value+tmp));
+                                context.sendMessage(k,tmp);
+                                context.sendMessage(succ,tmp);
+                                context.sendMessage(vertexId,tmp);
                             }
                         });
                     }
                 });
-                mp.forEach((k, v) -> {
-                    context.sendMessage(k, v);
-                });
+//                mp.forEach((k, v) -> {
+//                    context.sendMessage(k, v);
+//                });
             } else if (iteration == 3) {
                 messageIterator.forEachRemaining(obj -> {
                     Integer value = (Integer) obj;
