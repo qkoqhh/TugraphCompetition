@@ -45,7 +45,8 @@
                             <archive>
                                 <manifest>
                                     <mainClass>
-                                        com.antgroup.geaflow.MainRun
+<!--                                        com.antgroup.geaflow.MainRun-->
+                                        com.antgroup.geaflow.fusion.Fusion
                                     </mainClass>
                                 </manifest>
                             </archive>

@@ -9,6 +9,7 @@ import com.antgroup.geaflow.model.graph.vertex.IVertex;
 import com.google.protobuf.compiler.PluginProtos;
 import com.influxdb.client.domain.File;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.math3.util.Pair;
 import org.codehaus.janino.Java;
 import org.eclipse.jetty.util.ConcurrentHashSet;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FusionVertexSource extends RichFunction implements SourceFunction<IVertex<Long,VertexValue>> {
+public class FusionVertexSource extends RichFunction implements SourceFunction<IVertex<Pair<Long,VertexType>,VertexValue>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FusionVertexSource.class);
     protected final String filePath;
     protected transient RuntimeContext runtimeContext;
@@ -31,24 +32,24 @@ public class FusionVertexSource extends RichFunction implements SourceFunction<I
         this.filePath = filePath;
     }
 
-    List<IVertex<Long,VertexValue>> vertexList;
+    List<IVertex<Pair<Long,VertexType>,VertexValue>> vertexList;
     int readPos, listSize;
 
     @Override
     public void init(int parallel, int index) {
-        LOGGER.info("Parallel {} index {}",parallel,index);
+//        LOGGER.info("Parallel {} index {}",parallel,index);
 
         FileInput.readFile(filePath);
         FileInput.readLoan(parallel, index);
+        FileInput.readPersonOwnAccount(parallel, index);
         FileInput.readLoanDepositAccount(parallel, index);
         FileInput.readPersonApplyLoan(parallel, index);
-        FileInput.readPersonOwnAccount(parallel, index);
         FileInput.readAccountTransferAccount(parallel, index);
         FileInput.readPersonGuaranteePerson(parallel, index);
 
-        // TBD: Optimize it!!
-        while(!FileInput.finishAccountTransferAccount.get());
-        while(!FileInput.finishPersonGuaranteePerson.get());
+        FileInput.counterReadAccountTransferAccount.check();
+        FileInput.counterReadPersonGuaranteePerson.check();
+
         vertexList=FileInput.vertexListArr.get(index);
         readPos=0;
         listSize=vertexList.size();
@@ -56,11 +57,11 @@ public class FusionVertexSource extends RichFunction implements SourceFunction<I
     }
 
     @Override
-    public boolean fetch(IWindow<IVertex<Long,VertexValue>> window, SourceContext<IVertex<Long,VertexValue>> ctx) throws Exception {
+    public boolean fetch(IWindow<IVertex<Pair<Long,VertexType>,VertexValue>> window, SourceContext<IVertex<Pair<Long,VertexType>,VertexValue>> ctx) throws Exception {
 //        LOGGER.info("collection source fetch taskId:{}, batchId:{}",
 //                runtimeContext.getTaskArgs().getTaskId(), window.windowId());
         while (readPos < listSize) {
-            IVertex<Long, VertexValue> out = vertexList.get(readPos);
+            IVertex<Pair<Long, VertexType>, VertexValue> out = vertexList.get(readPos);
             long windowsId = window.assignWindow(out);
             if (window.windowId() == windowsId) {
                 ctx.collect(out);

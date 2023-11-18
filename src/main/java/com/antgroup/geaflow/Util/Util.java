@@ -1,6 +1,7 @@
 package com.antgroup.geaflow.Util;
 
 import com.antgroup.geaflow.fusion.VertexType;
+import org.apache.commons.math3.util.Pair;
 
 public class Util {
     public static String flushDir(String s){
@@ -11,7 +12,4 @@ public class Util {
         return ret;
     }
 
-    public static long flushId(long id, VertexType type){
-        return type==VertexType.Account ? (id<<1) : (id<<1|1);
-    }
 }
