@@ -140,6 +140,8 @@ public class Fusion {
                                 inMap.compute(targetId, (k, v) -> (v == null) ? 1 : (v + 1));
                             }
 
+                            context.sendMessage(e.getTargetId(), vertexId);
+
                             // Case 1
                             if (vv.owner != -1) {
                                 Double loan = FileInput.account2loan.get(targetId);
@@ -155,16 +157,15 @@ public class Fusion {
                                     });
                                 }
                             }
+
                         } else {
                             // Case 3
                             outEdgeAmount += e.getValue().transferAmount;
 
                             // Case 2
-                            if (e.getTargetId().getFirst() < vertexId) {
-                                outMap.compute(e.getTargetId().getFirst(), (k, v) -> (v == null) ? 1 : (v + 1));
+                            if (targetId < vertexId) {
+                                outMap.compute(targetId, (k, v) -> (v == null) ? 1 : (v + 1));
                             }
-
-                            context.sendMessage(e.getTargetId(), vertexId);
 
                         }
                     }
@@ -176,7 +177,6 @@ public class Fusion {
                     }
                 } else if (iteration == 2) {
                     // Case 2
-                    Map<Long,Integer>mp=new HashMap<>();
                     messageIterator.forEachRemaining(obj -> {
                         long succ= (Long) obj;
                         Pair<Long, VertexType> succKey= new Pair<>(succ,VertexType.Account);
