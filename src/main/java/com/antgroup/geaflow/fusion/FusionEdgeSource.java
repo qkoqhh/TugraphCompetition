@@ -1,5 +1,6 @@
 package com.antgroup.geaflow.fusion;
 
+import com.antgroup.geaflow.Util.PartionFileInput;
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
 import com.antgroup.geaflow.api.function.io.SourceFunction;
@@ -32,91 +33,50 @@ public class FusionEdgeSource extends RichFunction implements SourceFunction<IEd
         this.runtimeContext = runtimeContext;
     }
 
-    static List<String> readFileLines(String filePath) {
-        try {
-            List<String> lines = FileUtils.readLines(new File(filePath), Charset.defaultCharset());
-            return lines;
-        } catch (IOException e) {
-            throw new RuntimeException("error in read resource file: " + filePath, e);
-        }
-    }
 
-    List<String> linesLoanDepositAccount,linesPersonApplyLoan,linesAccountTransferAccount,linesPersonGuaranteePerson,linesPersonOwnAccount;
-    void readFile(){
-        linesLoanDepositAccount = readFileLines(filePath + "LoanDepositAccount.csv");
-        linesPersonApplyLoan= readFileLines(filePath+"PersonApplyLoan.csv");
-        linesPersonOwnAccount = readFileLines(filePath+"PersonOwnAccount.csv");
-        linesAccountTransferAccount = readFileLines(filePath+"AccountTransferAccount.csv");
-        linesPersonGuaranteePerson = readFileLines(filePath+"PersonGuaranteePerson.csv");
-    }
+    PartionFileInput inputLoanDepositAccount,inputPersonApplyLoan,inputAccountTransferAccount,inputPersonGuaranteePerson,inputPersonOwnAccount;
 
-    public void readPersonOwnAccount(int parallel,int index){
-        int size = linesPersonOwnAccount.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesPersonOwnAccount.get(i);
-            int first = line.indexOf('|');
-            int second = line.indexOf('|',first+1);
-            long personId = Long.parseLong(line.substring(0,first));
-            long accountId = Long.parseLong(line.substring(first+1,second));
+    public void readPersonOwnAccount(int parallel,int index) throws IOException {
+        inputPersonOwnAccount = new PartionFileInput(filePath + "PersonOwnAccount.csv", parallel,index);
+        while(inputPersonOwnAccount.nextLine()){
+            long personId = inputPersonOwnAccount.nextLong();
+            long accountId = inputPersonOwnAccount.nextLong();
             record.add(new ValueEdge<>(new Pair<>(accountId,VertexType.Account),new Pair<>(personId, VertexType.Person), 0D, EdgeDirection.IN));
         }
     }
-    public void readLoanDepositAccount(int parallel,int index){
-        int size = linesLoanDepositAccount.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesLoanDepositAccount.get(i);
-            int first = line.indexOf('|');
-            int second = line.indexOf('|',first+1);
-            long loanId = Long.parseLong(line.substring(0,first));
-            long accountId = Long.parseLong(line.substring(first+1,second));
+    public void readLoanDepositAccount(int parallel,int index) throws IOException {
+        inputLoanDepositAccount = new PartionFileInput(filePath+"LoanDepositAccount.csv", parallel,index);
+        while(inputLoanDepositAccount.nextLine()){
+            long loanId = inputLoanDepositAccount.nextLong();
+            long accountId = inputLoanDepositAccount.nextLong();
             record.add(new ValueEdge<>(new Pair<>(loanId, VertexType.Loan),new Pair<>(accountId,VertexType.Account), 0D));;
         }
     }
-    public void readPersonApplyLoan(int parallel,int index){
-        int size = linesPersonApplyLoan.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesPersonApplyLoan.get(i);
-            int first = line.indexOf('|');
-            int second = line.indexOf('|',first+1);
-            long personId = Long.parseLong(line.substring(0,first));
-            long loanId = Long.parseLong(line.substring(first+1,second));
+    public void readPersonApplyLoan(int parallel,int index) throws IOException {
+        inputPersonApplyLoan = new PartionFileInput(filePath+"PersonApplyLoan.csv",parallel,index);
+        while(inputPersonApplyLoan.nextLine()){
+            long personId = inputPersonApplyLoan.nextLong();
+            long loanId = inputPersonApplyLoan.nextLong();
             record.add(new ValueEdge<>(new Pair<>(loanId, VertexType.Loan),new Pair<>(personId,VertexType.Person), 0D, EdgeDirection.IN));;
         }
     }
-    public void readAccountTransferAccount(int parallel,int index){
-        int size = linesAccountTransferAccount.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesAccountTransferAccount.get(i);
-            int first = line.indexOf('|');
-            int second = line.indexOf('|', first + 1);
-            int third = line.indexOf('|', second + 1);
-            long fromId = Long.parseLong(line.substring(0, first));
-            long toId = Long.parseLong(line.substring(first + 1, second));
-            double amount = Double.parseDouble(line.substring(second+1, third));
+    public void readAccountTransferAccount(int parallel,int index) throws IOException {
+        inputAccountTransferAccount = new PartionFileInput(filePath+"AccountTransferAccount.csv",parallel,index);
+        while(inputAccountTransferAccount.nextLine()){
+            long fromId = inputAccountTransferAccount.nextLong();
+            long toId = inputAccountTransferAccount.nextLong();
+            double amount = inputAccountTransferAccount.nextDouble();
             Pair<Long, VertexType> fromKey = new Pair<>(fromId, VertexType.Account);
             Pair<Long, VertexType> toKey = new Pair<>(toId, VertexType.Account);
             record.add(new ValueEdge<>(fromKey, toKey, amount));
             record.add(new ValueEdge<>(toKey, fromKey, amount, EdgeDirection.IN));
         }
     }
-    public void readPersonGuaranteePerson(int parallel,int index){
-        int size = linesPersonGuaranteePerson.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesPersonGuaranteePerson.get(i);
-            int first = line.indexOf('|');
-            int second = line.indexOf('|', first + 1);
-            long fromId = Long.parseLong(line.substring(0, first));
-            long toId = Long.parseLong(line.substring(first + 1, second));
+    public void readPersonGuaranteePerson(int parallel,int index) throws IOException {
+        inputPersonGuaranteePerson = new PartionFileInput(filePath+"PersonGuaranteePerson.csv",parallel,index);
+        while(inputPersonGuaranteePerson.nextLine()){
+            long fromId = inputPersonGuaranteePerson.nextLong();
+            long toId = inputPersonGuaranteePerson.nextLong();
             Pair<Long, VertexType> fromKey = new Pair<>(fromId, VertexType.Person);
             Pair<Long, VertexType> toKey = new Pair<>(toId, VertexType.Person);
 
@@ -129,12 +89,15 @@ public class FusionEdgeSource extends RichFunction implements SourceFunction<IEd
     int readPos, listSize;
     @Override
     public void init(int parallel, int index) {
-        readFile();
-        readPersonOwnAccount(parallel, index);
-        readLoanDepositAccount(parallel, index);
-        readPersonApplyLoan(parallel, index);
-        readAccountTransferAccount(parallel, index);
-        readPersonGuaranteePerson(parallel, index);
+        try {
+            readPersonOwnAccount(parallel, index);
+            readLoanDepositAccount(parallel, index);
+            readPersonApplyLoan(parallel, index);
+            readAccountTransferAccount(parallel, index);
+            readPersonGuaranteePerson(parallel, index);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         readPos = 0;
         listSize = record.size();

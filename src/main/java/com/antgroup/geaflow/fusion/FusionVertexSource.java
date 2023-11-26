@@ -1,5 +1,6 @@
 package com.antgroup.geaflow.fusion;
 
+import com.antgroup.geaflow.Util.PartionFileInput;
 import com.antgroup.geaflow.Util.Util;
 import com.antgroup.geaflow.api.context.RuntimeContext;
 import com.antgroup.geaflow.api.function.RichFunction;
@@ -32,59 +33,33 @@ public class FusionVertexSource extends RichFunction implements SourceFunction<I
         this.filePath = filePath;
     }
 
-    static List<String> readFileLines(String fileName) {
-        try {
-            List<String> lines = FileUtils.readLines(new File(fileName), Charset.defaultCharset());
-            return lines;
-        } catch (IOException e) {
-            throw new RuntimeException("error in read resource file: " + fileName, e);
-        }
-    }
 
-    List<String> linesLoan,linesAccount,linesPerson;
-    void readFile(){
-        linesLoan=readFileLines(filePath+"Loan.csv");
-        linesAccount=readFileLines(filePath+"Account.csv");
-        linesPerson=readFileLines(filePath+"Person.csv");
-    }
 
+    PartionFileInput inputLoan, inputAccount, inputPerson;
 
 
     List<IVertex<Pair<Long,VertexType>, VertexValue>> record=new ArrayList<>();
-    void readLoan(int parallel,int index){
-        int size = linesLoan.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesLoan.get(i);
-            int first = line.indexOf('|');
-            int second = line.indexOf('|',first+1);
-            long loanId = Long.parseLong(line.substring(0,first));
-            double amount = Double.parseDouble(line.substring(first+1,second));
+    void readLoan(int parallel,int index) throws IOException {
+        inputLoan = new PartionFileInput(filePath+"Loan.csv",parallel,index);
+        while (inputLoan.nextLine()){
+            Long loanId = inputLoan.nextLong();
+            Double amount = inputLoan.nextDouble();
             record.add(new ValueVertex<>(new Pair<>(loanId,VertexType.Loan),new VertexValue(amount)));
         }
     }
 
-    void readAccount(int parallel,int index){
-        int size = linesAccount.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesAccount.get(i);
-            int first = line.indexOf('|');
-            long accountId = Long.parseLong(line.substring(0,first));
+    void readAccount(int parallel,int index) throws IOException {
+        inputAccount = new PartionFileInput(filePath+"Account.csv",parallel,index);
+        while(inputAccount.nextLine()) {
+            long accountId = inputAccount.nextLong();
             record.add(new ValueVertex<>(new Pair<>(accountId,VertexType.Account),new VertexValue()));
         }
     }
 
-    void readPerson(int parallel,int index){
-        int size = linesPerson.size();
-        int readPos = Math.max (1, size *index /parallel);
-        int readEnd = Math.min(size*(index+1)/parallel,size);
-        for (int i=readPos; i<readEnd; i++){
-            String line= linesPerson.get(i);
-            int first = line.indexOf('|');
-            long personId = Long.parseLong(line.substring(0,first));
+    void readPerson(int parallel,int index) throws IOException {
+        inputPerson = new PartionFileInput(filePath+"Person.csv",parallel,index);
+        while(inputPerson.nextLine()){
+            long personId = inputPerson.nextLong();
             record.add(new ValueVertex<>(new Pair<>(personId,VertexType.Person),new VertexValue()));
         }
     }
@@ -94,10 +69,13 @@ public class FusionVertexSource extends RichFunction implements SourceFunction<I
     public void init(int parallel, int index) {
 //        LOGGER.info("Parallel {} index {}",parallel,index);
 
-        readFile();
-        readLoan(parallel, index);
-        readAccount(parallel, index);
-        readPerson(parallel, index);
+        try {
+            readLoan(parallel, index);
+            readAccount(parallel, index);
+            readPerson(parallel, index);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
 
         readPos=0;
