@@ -32,7 +32,7 @@ import java.util.*;
 public class Fusion {
     private static final Logger LOGGER = LoggerFactory.getLogger(Fusion.class);
     public static final double EPS = 1E-8;
-    public static String DATA_PWD = "D:\\work\\resources\\sf1\\snapshot\\";
+    public static String DATA_PWD = "/home1/xqwang/project/sf1/snapshot/";
     public static String OUTPUT_PWD = "./target/tmp/data/result/pagerank";
 
 

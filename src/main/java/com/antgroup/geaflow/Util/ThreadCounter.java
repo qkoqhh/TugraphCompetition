@@ -1,6 +1,5 @@
 package com.antgroup.geaflow.Util;
 
-import sun.awt.Mutex;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;

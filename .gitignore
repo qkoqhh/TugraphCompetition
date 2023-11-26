@@ -5,3 +5,4 @@ target
 std-tmp
 /src/main/resources/snapshot/
 /out/
+result/
