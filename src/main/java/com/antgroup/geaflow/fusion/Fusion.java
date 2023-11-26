@@ -23,14 +23,11 @@ import com.antgroup.geaflow.pipeline.PipelineFactory;
 import com.antgroup.geaflow.view.GraphViewBuilder;
 import com.antgroup.geaflow.view.IViewDesc;
 import com.antgroup.geaflow.view.graph.GraphViewDesc;
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.apache.commons.math3.util.Pair;
-import org.apache.hadoop.yarn.webapp.hamlet.Hamlet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class Fusion {
     private static final Logger LOGGER = LoggerFactory.getLogger(Fusion.class);
@@ -38,8 +35,6 @@ public class Fusion {
     public static String DATA_PWD = "D:\\work\\resources\\sf1\\snapshot\\";
     public static String OUTPUT_PWD = "./target/tmp/data/result/pagerank";
 
-    static Map<Long, MutablePair<Double, Set<Long>>> case1Answer=new ConcurrentHashMap<>();
-    static Map<Long, Map<Long, Integer> > transferIn = new ConcurrentHashMap<>(), transferOut = new ConcurrentHashMap<>();
 
     public static void main(String[] args) {
         long startTime = System.currentTimeMillis();
@@ -71,7 +66,7 @@ public class Fusion {
                     new FusionVertexSource(DATA_PWD), AllWindow.getInstance()
             ).withParallelism(conf.getInteger(MyConfigKeys.SOURCE_PARALLELISM));
 
-            PWindowSource<IEdge<Pair<Long,VertexType>, EdgeValue>> prEdges = pipelineTaskContext.buildSource(
+            PWindowSource<IEdge<Pair<Long,VertexType>, Double>> prEdges = pipelineTaskContext.buildSource(
                     new FusionEdgeSource(DATA_PWD), AllWindow.getInstance()
             ).withParallelism(conf.getInteger(MyConfigKeys.SOURCE_PARALLELISM));
 
@@ -81,12 +76,12 @@ public class Fusion {
                     .withShardNum(iterationParallelism)
                     .withBackend(IViewDesc.BackendType.Memory)
                     .build();
-            PGraphWindow<Pair<Long, VertexType>, VertexValue, EdgeValue> graphWindow =
+            PGraphWindow<Pair<Long, VertexType>, VertexValue, Double> graphWindow =
                     pipelineTaskContext.buildWindowStreamGraph(prVertices, prEdges, graphViewDesc);
 
             SinkFunction<IVertex<Pair<Long, VertexType>, VertexValue>> sink = new FusionSinkFunction();
 
-            graphWindow.compute(new FusionAlgorithm(4))
+            graphWindow.compute(new FusionAlgorithm(5))
                     .compute(iterationParallelism)
                     .getVertices()
                     .sink(sink)
@@ -97,7 +92,7 @@ public class Fusion {
         return pipeline.execute();
     }
 
-    public static class FusionAlgorithm extends VertexCentricCompute<Pair<Long,VertexType>, VertexValue, EdgeValue, Object> {
+    public static class FusionAlgorithm extends VertexCentricCompute<Pair<Long,VertexType>, VertexValue, Double, Object> {
 
 
         public FusionAlgorithm(long iterations) {
@@ -105,7 +100,7 @@ public class Fusion {
         }
 
         @Override
-        public VertexCentricComputeFunction<Pair<Long,VertexType>, VertexValue, EdgeValue, Object> getComputeFunction() {
+        public VertexCentricComputeFunction<Pair<Long,VertexType>, VertexValue, Double, Object> getComputeFunction() {
             return new FusionCentricComputeFunction();
         }
 
@@ -115,134 +110,217 @@ public class Fusion {
         }
     }
 
-    public static class FusionCentricComputeFunction extends AbstractVcFunc<Pair<Long, VertexType>, VertexValue, EdgeValue, Object> {
+    public static class FusionCentricComputeFunction extends AbstractVcFunc<Pair<Long, VertexType>, VertexValue, Double, Object> {
         @Override
         public void compute(Pair<Long, VertexType> vertexKey, Iterator<Object> messageIterator) {
-            long vertexId = vertexKey.getFirst();
+            Long vertexId = vertexKey.getFirst();
             long iteration = context.getIterationId();
             VertexValue vv = context.vertex().get().getValue();
 
-            if( vertexKey.getSecond() == VertexType.Account){
+            if (vertexKey.getSecond() == VertexType.Loan) {
+                // Loan
+                for (IEdge<Pair<Long, VertexType>, Double> edge : context.edges().getEdges()) {
+                    Pair<Long, VertexType> targetVertex = edge.getTargetId();
+                    if (targetVertex.getSecond() == VertexType.Account) {
+                        // Case 1
+                        context.sendMessage(targetVertex, new Pair<>(vertexId, vv.amount));
+                    } else {
+                        // Case 4
+                        context.sendMessage(targetVertex, vv.amount);
+                    }
+                }
+            } else if (vertexKey.getSecond() == VertexType.Account) {
                 // Account
-                Map<Long, Integer> inMap = transferIn.get(vertexId), outMap = transferOut.get(vertexId);
                 if (iteration == 1) {
-                    // Case3
-                    double outEdgeAmount=0D, inEdgeAmount=0D;
+                    double outEdgeAmount = 0D, inEdgeAmount = 0D;
+                    List<Pair<Long,VertexType>> tmpList=new ArrayList<>();
+                    vv.inArr = new ArrayList<>();
+                    vv.outArr = new ArrayList<>();
+                    Long owner = null;
 
-                    for (IEdge<Pair<Long, VertexType>, EdgeValue> e : context.edges().getEdges()) {
+                    for (IEdge<Pair<Long, VertexType>, Double> e : context.edges().getEdges()) {
                         final long targetId = e.getTargetId().getFirst();
                         if (e.getDirect() == EdgeDirection.IN) {
+                            if (e.getTargetId().getSecond() == VertexType.Person) {
+                                // Case 1
+                                owner = targetId;
+                                continue;
+                            }
+
+
                             // Case 3
-                            inEdgeAmount += e.getValue().transferAmount;
+                            inEdgeAmount += e.getValue();
 
                             // Case 2
                             if (targetId < vertexId) {
-                                inMap.compute(targetId, (k, v) -> (v == null) ? 1 : (v + 1));
+                                vv.inArr.add(targetId);
                             }
 
-                            context.sendMessage(e.getTargetId(), vertexId);
+                            tmpList.add(e.getTargetId());
 
-                            // Case 1
-                            if (vv.owner != -1) {
-                                Double loan = FileInput.account2loan.get(targetId);
-                                if (loan != null) {
-                                    case1Answer.compute(vv.owner, (k, v) -> {
-                                        if(v==null){
-                                            return new MutablePair<>(loan, new HashSet<Long>(){{add(targetId);}});
-                                        }
-                                        if(v.getRight().add(targetId)){
-                                            v.setLeft( v.getLeft()+ loan);
-                                        }
-                                        return v;
-                                    });
-                                }
-                            }
 
                         } else {
                             // Case 3
-                            outEdgeAmount += e.getValue().transferAmount;
+                            outEdgeAmount += e.getValue();
 
                             // Case 2
                             if (targetId < vertexId) {
-                                outMap.compute(targetId, (k, v) -> (v == null) ? 1 : (v + 1));
+                                vv.outArr.add(targetId);
                             }
 
+                        }
+                    }
+
+                    if (!tmpList.isEmpty()) {
+                        // Case 2
+                        vv.outArr.add(vertexId);
+                        // Case 1
+                        vv.outArr.add(owner != null ? owner : -1);
+                        Object[] arr = vv.outArr.toArray();
+                        for (Pair<Long, VertexType> e : tmpList) {
+                            context.sendMessage(e, arr);
                         }
                     }
 
 
                     // Case 3
-                    if(inEdgeAmount >EPS && outEdgeAmount > EPS){
+                    if (inEdgeAmount > EPS && outEdgeAmount > EPS) {
                         vv.ret3 = inEdgeAmount / outEdgeAmount;
                     }
                 } else if (iteration == 2) {
-                    // Case 2
+                    List<Long> ownerList = new ArrayList<>();
+                    vv.depositList = new ArrayList<>();
                     messageIterator.forEachRemaining(obj -> {
-                        long succ= (Long) obj;
-                        Pair<Long, VertexType> succKey= new Pair<>(succ,VertexType.Account);
-                        Map<Long,Integer> out =  transferOut.get(succ), in = inMap;
-                        int ret = 0;
-                        if (in.size() < out.size()) {
-                            for (Map.Entry<Long, Integer> entry:in.entrySet()) {
-                                if(out.containsKey(entry.getKey())){
-                                    int tmp = out.get(entry.getKey()) * entry.getValue();
-                                    context.sendMessage(new Pair<>(entry.getKey(), VertexType.Account), tmp);
-                                    ret += tmp;
+                        if (obj instanceof Object[]) {
+                            // from Account Transfer Account
+                            Object[] msg = (Object[]) obj;
+                            int n = msg.length;
+                            if ((Long)msg[n - 1] != -1) {
+                                // Case 1
+                                Long owner = (Long) msg[n - 1];
+                                ownerList.add(owner);
+                            }
+
+
+                            // Case 2
+                            Pair<Long, VertexType> succKey = new Pair<>((Long)msg[n - 2], VertexType.Account);
+                            Map<Long, Integer> out = new HashMap<>(), in = new HashMap<>();
+                            for (int i = 0; i < n - 2; i++) {
+                                out.compute((Long) msg[i], (k, v) -> (v == null) ? 1 : v + 1);
+                            }
+                            for (Long inNode : vv.inArr) {
+                                in.compute(inNode, (k, v) -> (v == null) ? 1 : v + 1);
+                            }
+                            int ret = 0;
+                            if (in.size() < out.size()) {
+                                for (Map.Entry<Long, Integer> entry : in.entrySet()) {
+                                    if (out.containsKey(entry.getKey())) {
+                                        int tmp = out.get(entry.getKey()) * entry.getValue();
+                                        context.sendMessage(new Pair<>(entry.getKey(), VertexType.Account), tmp);
+                                        ret += tmp;
+                                    }
+                                }
+                            } else {
+                                for (Map.Entry<Long, Integer> entry : out.entrySet()) {
+                                    if (in.containsKey(entry.getKey())) {
+                                        int tmp = in.get(entry.getKey()) * entry.getValue();
+                                        context.sendMessage(new Pair<>(entry.getKey(), VertexType.Account), tmp);
+                                        ret += tmp;
+                                    }
                                 }
                             }
-                        }else{
-                            for (Map.Entry<Long,Integer> entry: out.entrySet()){
-                                if(in.containsKey(entry.getKey())){
-                                    int tmp = in.get(entry.getKey())*entry.getValue();
-                                    context.sendMessage(new Pair<>(entry.getKey(), VertexType.Account), tmp);
-                                    ret += tmp;
-                                }
-                            }
+                            context.sendMessage(succKey, ret);
+                            vv.ret2 += ret;
+                        } else {
+                            // from Account Deposit Loan
+                            // Case 1
+                            vv.depositList.add((Pair<Long, Double>) obj);
                         }
-                        context.sendMessage(succKey, ret);
-                        vv.ret2 += ret;
                     });
-                } else if (iteration == 3) {
+
+                    // Case 1
+                    if (!vv.depositList.isEmpty()) {
+                        for (Long owner : ownerList) {
+                            this.context.sendMessage(new Pair<>(owner, VertexType.Person), vv.depositList);
+                        }
+                    }
+                } else {
+                    // iteation > 2
                     // Case 2
                     messageIterator.forEachRemaining(obj -> {
-                        Integer value = (Integer) obj;
-                        vv.ret2 += value;
+                        if (obj instanceof Integer) {
+                            Integer value = (Integer) obj;
+                            vv.ret2 += value;
+                        } else {
+                            Long owner = (Long) obj;
+                            this.context.sendMessage(new Pair<>(owner, VertexType.Person), vv.depositList);
+                        }
                     });
                 }
-            }else{
+            } else if (vertexKey.getSecond() == VertexType.Person) {
                 // Person
+                if (iteration == 1) {
+                    // Case 4
+                    vv.guaranteeMap = new HashMap<>();
+                    vv.guaranteeMap.put(vertexId, 0D);
+                } else if (iteration == 2) {
+                    // Case 4
+                    double sum = 0D;
+                    while (messageIterator.hasNext()) {
+                        double amount = (double) messageIterator.next();
+                        sum += amount;
+                    }
+                    context.sendMessageToNeighbors(new Pair<>(vertexId, sum));
+                } else if (iteration <= 5) {
+                    List<Pair<Long, Double>> msgList = new ArrayList<>();
+                    if (iteration == 3) {
+                        Set<Long> loanSet = new HashSet<>();
+                        while (messageIterator.hasNext()) {
+                            Object obj = messageIterator.next();
+                            if (obj instanceof List) {
+                                // Case 1
+                                List<Pair<Long, Double>> loanList = (List<Pair<Long, Double>>) obj;
+                                for (Pair<Long, Double> p : loanList) {
+                                    if (loanSet.add(p.getFirst())) {
+                                        vv.ret1 += p.getSecond();
+                                    }
+                                }
+                            } else {
+                                // Case 4
+                                Pair<Long, Double> msg = (Pair<Long, Double>) obj;
+                                if (!vv.guaranteeMap.containsKey(msg.getKey())) {
+                                    vv.ret4 += msg.getSecond();
+                                    vv.guaranteeMap.put(msg.getFirst(), msg.getSecond());
+                                    msgList.add(msg);
+                                }
+                            }
+                        }
 
-
-                // Case 4
-                if(iteration==1){// the first time of visiting current vertex
-                    vv.guaranteeSet.add(vertexId);
-                    if(FileInput.person2loan.containsKey(vertexId)) {
-                        for (IEdge<Pair<Long, VertexType>, EdgeValue> inEdge : this.context.edges().getEdges()) {
-                            this.context.sendMessage(inEdge.getTargetId(), vertexId);
+                    } else {
+                        // Case 4
+                        while (messageIterator.hasNext()) {
+                            Pair<Long, Double> msg = (Pair<Long, Double>) messageIterator.next();
+                            if (!vv.guaranteeMap.containsKey(msg.getKey())) {
+                                vv.ret4 += msg.getSecond();
+                                vv.guaranteeMap.put(msg.getFirst(), msg.getSecond());
+                                msgList.add(msg);
+                            }
                         }
                     }
-                }else if(iteration<=4){
-                    List<Long> msgList = new ArrayList<>();
-                    while(messageIterator.hasNext()){
-                        Long msg= (Long) messageIterator.next();
-                        if (vv.guaranteeSet.add(msg)){
-                            // TBD: can we compute ahead and convey this value?
-                            double loan=FileInput.person2loan.get(msg);
-                            vv.ret4 += loan;
-                            msgList.add(msg);
-                        }
-                    }
-                    if(iteration<=3){
-                        for(IEdge<Pair<Long, VertexType>,EdgeValue> inEdge:this.context.edges().getEdges()){
-                            // TBD: can we convey a list?
-                            for (Long msg:msgList) {
-                                this.context.sendMessage(inEdge.getTargetId(), msg);
+                    if (iteration <= 4 && !msgList.isEmpty()) {
+                        // Case 4
+                        for (Pair<Long, Double> msg : msgList) {
+                            for (IEdge<Pair<Long, VertexType>, Double> e: context.edges().getEdges()){
+                                context.sendMessage(e.getTargetId(), msg);
                             }
                         }
                     }
                 }
+
             }
 
         }
     }
+
+
 }

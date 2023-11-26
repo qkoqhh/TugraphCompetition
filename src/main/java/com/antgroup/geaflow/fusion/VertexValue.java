@@ -1,27 +1,31 @@
 package com.antgroup.geaflow.fusion;
 
 
-import java.util.HashSet;
+import org.apache.commons.math3.util.Pair;
+
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class VertexValue {
-    VertexValue(long owner){
-        this.owner=owner;
-        this.guaranteeSet = new HashSet<>();
+    VertexValue(){}
+    VertexValue(double amount){
+        this.amount = amount;
     }
     // Case 1
-    public long owner;
+    public double ret1;
+    public List<Pair<Long,Double>> depositList;
 
 
     // Case 2
     public int ret2;
+    public List<Long> inArr, outArr;
 
     // Case 3
     public double ret3;
 
     // Case 4
     public double ret4;
-    public Set<Long> guaranteeSet;
+    public Map<Long, Double> guaranteeMap;
+    public double amount;
 }
 

@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.antgroup.geaflow.fusion.Fusion.EPS;
-import static com.antgroup.geaflow.fusion.Fusion.case1Answer;
 
 public class FusionSinkFunction extends RichFunction implements SinkFunction<IVertex<Pair<Long, VertexType>, VertexValue>> {
     private static final Logger LOGGER = LoggerFactory.getLogger(FusionSinkFunction.class);
@@ -68,19 +67,18 @@ public class FusionSinkFunction extends RichFunction implements SinkFunction<IVe
     public void close() {
         threadCounter.finish();
         threadCounter.check();
-        if(case1Output.compareAndSet(false,true)){
+        if(case1Output.compareAndSet(false,true)) {
             LOGGER.info("Case 1 Sink");
-            File file=openFile(1);
+            File file = openFile(1);
             StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("id|value\n");
-            case1Answer.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(
-                    (entry)->{
-                        stringBuilder.append(entry.getKey())
-                                .append('|')
-                                .append(format.format(entry.getValue().getLeft()/100000000D))
-                                .append('\n');
-                    }
-            );
+            ans1.sort(Comparator.comparing(o->o.getId().getFirst()));
+            ans1.forEach(v -> {
+                stringBuilder.append(v.getId().getFirst())
+                        .append('|')
+                        .append(format.format(v.getValue().ret1 / 100000000D))
+                        .append('\n');
+            });
             try {
                 FileUtils.write(file, stringBuilder.toString(), Charset.defaultCharset(), false);
             } catch (IOException e) {
@@ -147,11 +145,14 @@ public class FusionSinkFunction extends RichFunction implements SinkFunction<IVe
         }
     }
 
-    static List<IVertex<Pair<Long, VertexType>, VertexValue>> ans2 = new Vector<>(), ans3 = new Vector<>(), ans4 = new Vector<>();
+    static List<IVertex<Pair<Long, VertexType>, VertexValue>> ans1 = new Vector<>() ,ans2 = new Vector<>(), ans3 = new Vector<>(), ans4 = new Vector<>();
 
     @Override
-    public void write(IVertex<Pair<Long, VertexType>, VertexValue> out) throws Exception {
+    public void write(IVertex<Pair<Long, VertexType>, VertexValue> out)  {
         VertexValue vv = out.getValue();
+        if (vv.ret1 > EPS){
+            ans1.add(out);
+        }
         if (vv.ret2 > 0) {
             ans2.add(out);
         }
