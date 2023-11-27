@@ -247,8 +247,8 @@ public class Fusion {
 
                     // Case 1
                     if (!depositList.isEmpty()) {
-                        HashSet<Long> ownerSet = new HashSet<>(ownerList);
                         Object[] uniqueDepositList = new HashSet<>(depositList).toArray();
+                        HashSet<Long> ownerSet = new HashSet<>(ownerList);
                         for (Long owner : ownerSet) {
                             this.context.sendMessage(new Pair<>(owner, VertexType.Person), uniqueDepositList);
                         }
@@ -303,20 +303,25 @@ public class Fusion {
                     } else {
                         // Case 4
                         while (messageIterator.hasNext()) {
-                            Pair<Long, Double> msg = (Pair<Long, Double>) messageIterator.next();
-                            if (vv.guaranteeSet.add(msg.getKey())) {
-                                vv.ret4 += msg.getSecond();
-                                msgList.add(msg);
+                            Object[] msg = (Object[]) messageIterator.next();
+                            int n=msg.length;
+                            for (int i=0; i<n; i+=2) {
+                                if (vv.guaranteeSet.add((Long) msg[i])) {
+                                    vv.ret4 += (Double) msg[i+1];
+                                    msgList.add(new Pair<>((Long) msg[i], (Double) msg[i+1]));
+                                }
                             }
                         }
                     }
                     if (iteration <= 4 && !msgList.isEmpty()) {
+                        List<Object> output=new ArrayList<>(msgList.size()*2);
                         // Case 4
                         for (Pair<Long, Double> msg : msgList) {
-                            for (IEdge<Pair<Long, VertexType>, Double> e: context.edges().getEdges()){
-                                context.sendMessage(e.getTargetId(), msg);
-                            }
+                            output.add(msg.getFirst());
+                            output.add(msg.getSecond());
                         }
+                        Object[] finalOutput = output.toArray();
+                        context.sendMessageToNeighbors(finalOutput);
                     }
                 }
 
