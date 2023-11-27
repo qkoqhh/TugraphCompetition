@@ -279,8 +279,7 @@ public class Fusion {
                     List<Pair<Long, Double>> msgList = new ArrayList<>();
                     if (iteration == 3) {
                         Set<Long> loanSet = new HashSet<>();
-                        while (messageIterator.hasNext()) {
-                            Object obj = messageIterator.next();
+                        messageIterator.forEachRemaining( obj-> {
                             if (obj instanceof Object[]) {
                                 // Case 1
                                 Object[] loanList = (Object[]) obj;
@@ -298,12 +297,12 @@ public class Fusion {
                                     msgList.add(msg);
                                 }
                             }
-                        }
+                        });
 
                     } else {
                         // Case 4
-                        while (messageIterator.hasNext()) {
-                            Object[] msg = (Object[]) messageIterator.next();
+                        messageIterator.forEachRemaining(obj-> {
+                            Object[] msg = (Object[]) obj;
                             int n=msg.length;
                             for (int i=0; i<n; i+=2) {
                                 if (vv.guaranteeSet.add((Long) msg[i])) {
@@ -311,7 +310,7 @@ public class Fusion {
                                     msgList.add(new Pair<>((Long) msg[i], (Double) msg[i+1]));
                                 }
                             }
-                        }
+                        });
                     }
                     if (iteration <= 4 && !msgList.isEmpty()) {
                         List<Object> output=new ArrayList<>(msgList.size()*2);
