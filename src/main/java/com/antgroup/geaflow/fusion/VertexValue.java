@@ -5,6 +5,7 @@ import org.apache.commons.math3.util.Pair;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class VertexValue {
     VertexValue(){}
@@ -13,7 +14,6 @@ public class VertexValue {
     }
     // Case 1
     public double ret1;
-    public List<Pair<Long,Double>> depositList;
 
 
     // Case 2
@@ -26,7 +26,7 @@ public class VertexValue {
 
     // Case 4
     public double ret4;
-    public Map<Long, Double> guaranteeMap;
+    public Set<Long> guaranteeSet;
     public double amount;
 }
 

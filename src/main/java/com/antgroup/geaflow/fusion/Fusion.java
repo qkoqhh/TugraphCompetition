@@ -197,7 +197,7 @@ public class Fusion {
                     }
                 } else if (iteration == 2) {
                     List<Long> ownerList = new ArrayList<>();
-                    vv.depositList = new ArrayList<>();
+                    List<Pair<Long, Double>> depositList = new ArrayList<>();
                     messageIterator.forEachRemaining(obj -> {
                         if (obj instanceof Long){
                             ownerList.add((Long) obj);
@@ -241,35 +241,32 @@ public class Fusion {
                         } else {
                             // from Account Deposit Loan
                             // Case 1
-                            vv.depositList.add((Pair<Long, Double>) obj);
+                            depositList.add((Pair<Long, Double>) obj);
                         }
                     });
 
                     // Case 1
-                    if (!vv.depositList.isEmpty()) {
-                        for (Long owner : ownerList) {
-                            this.context.sendMessage(new Pair<>(owner, VertexType.Person), vv.depositList);
+                    if (!depositList.isEmpty()) {
+                        HashSet<Long> ownerSet = new HashSet<>(ownerList);
+                        Object[] uniqueDepositList = new HashSet<>(depositList).toArray();
+                        for (Long owner : ownerSet) {
+                            this.context.sendMessage(new Pair<>(owner, VertexType.Person), uniqueDepositList);
                         }
                     }
                 } else {
                     // iteation > 2
                     // Case 2
                     messageIterator.forEachRemaining(obj -> {
-                        if (obj instanceof Integer) {
-                            Integer value = (Integer) obj;
-                            vv.ret2 += value;
-                        } else {
-                            Long owner = (Long) obj;
-                            this.context.sendMessage(new Pair<>(owner, VertexType.Person), vv.depositList);
-                        }
+                        Integer value = (Integer) obj;
+                        vv.ret2 += value;
                     });
                 }
             } else if (vertexKey.getSecond() == VertexType.Person) {
                 // Person
                 if (iteration == 1) {
                     // Case 4
-                    vv.guaranteeMap = new HashMap<>();
-                    vv.guaranteeMap.put(vertexId, 0D);
+                    vv.guaranteeSet = new HashSet<>();
+                    vv.guaranteeSet.add(vertexId);
                 } else if (iteration == 2) {
                     // Case 4
                     double sum = 0D;
@@ -284,20 +281,20 @@ public class Fusion {
                         Set<Long> loanSet = new HashSet<>();
                         while (messageIterator.hasNext()) {
                             Object obj = messageIterator.next();
-                            if (obj instanceof List) {
+                            if (obj instanceof Object[]) {
                                 // Case 1
-                                List<Pair<Long, Double>> loanList = (List<Pair<Long, Double>>) obj;
-                                for (Pair<Long, Double> p : loanList) {
-                                    if (loanSet.add(p.getFirst())) {
-                                        vv.ret1 += p.getSecond();
+                                Object[] loanList = (Object[]) obj;
+                                for (Object loanObj : loanList) {
+                                    Pair<Long, Double> loan = (Pair<Long, Double>) loanObj;
+                                    if (loanSet.add(loan.getFirst())) {
+                                        vv.ret1 += loan.getSecond();
                                     }
                                 }
                             } else {
                                 // Case 4
                                 Pair<Long, Double> msg = (Pair<Long, Double>) obj;
-                                if (!vv.guaranteeMap.containsKey(msg.getKey())) {
+                                if (vv.guaranteeSet.add(msg.getKey())) {
                                     vv.ret4 += msg.getSecond();
-                                    vv.guaranteeMap.put(msg.getFirst(), msg.getSecond());
                                     msgList.add(msg);
                                 }
                             }
@@ -307,9 +304,8 @@ public class Fusion {
                         // Case 4
                         while (messageIterator.hasNext()) {
                             Pair<Long, Double> msg = (Pair<Long, Double>) messageIterator.next();
-                            if (!vv.guaranteeMap.containsKey(msg.getKey())) {
+                            if (vv.guaranteeSet.add(msg.getKey())) {
                                 vv.ret4 += msg.getSecond();
-                                vv.guaranteeMap.put(msg.getFirst(), msg.getSecond());
                                 msgList.add(msg);
                             }
                         }
