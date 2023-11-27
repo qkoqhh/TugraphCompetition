@@ -18,7 +18,8 @@ public class VertexValue {
 
     // Case 2
     public int ret2;
-    public List<Long> inArr, outArr;
+    public Map<Long, Integer> inMap;
+    public List<Long>  outArr;
 
     // Case 3
     public double ret3;

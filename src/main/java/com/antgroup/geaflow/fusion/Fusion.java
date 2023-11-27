@@ -134,7 +134,7 @@ public class Fusion {
                 if (iteration == 1) {
                     double outEdgeAmount = 0D, inEdgeAmount = 0D;
                     List<Pair<Long,VertexType>> tmpList=new ArrayList<>();
-                    vv.inArr = new ArrayList<>();
+                    vv.inMap = new HashMap<>();
                     vv.outArr = new ArrayList<>();
                     Long owner = null;
 
@@ -153,7 +153,7 @@ public class Fusion {
 
                             // Case 2
                             if (targetId < vertexId) {
-                                vv.inArr.add(targetId);
+                                vv.inMap.compute(targetId, (k,v) -> (v==null)? 1: v+1);
                             }
 
                             tmpList.add(e.getTargetId());
@@ -214,12 +214,9 @@ public class Fusion {
 
                             // Case 2
                             Pair<Long, VertexType> succKey = new Pair<>((Long)msg[n - 2], VertexType.Account);
-                            Map<Long, Integer> out = new HashMap<>(), in = new HashMap<>();
+                            Map<Long, Integer> out = new HashMap<>(), in = vv.inMap;
                             for (int i = 0; i < n - 2; i++) {
                                 out.compute((Long) msg[i], (k, v) -> (v == null) ? 1 : v + 1);
-                            }
-                            for (Long inNode : vv.inArr) {
-                                in.compute(inNode, (k, v) -> (v == null) ? 1 : v + 1);
                             }
                             int ret = 0;
                             if (in.size() < out.size()) {
