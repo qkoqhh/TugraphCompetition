@@ -172,13 +172,21 @@ public class Fusion {
                     }
 
                     if (!tmpList.isEmpty()) {
-                        // Case 2
-                        vv.outArr.add(vertexId);
-                        // Case 1
-                        vv.outArr.add(owner != null ? owner : -1);
-                        Object[] arr = vv.outArr.toArray();
-                        for (Pair<Long, VertexType> e : tmpList) {
-                            context.sendMessage(e, arr);
+                        if (vv.outArr.isEmpty()){
+                            if (owner != null) {
+                                for (Pair<Long, VertexType> e : tmpList) {
+                                    context.sendMessage(e, owner);
+                                }
+                            }
+                        }else {
+                            // Case 2
+                            vv.outArr.add(vertexId);
+                            // Case 1
+                            vv.outArr.add(owner != null ? owner : -1);
+                            Object[] arr = vv.outArr.toArray();
+                            for (Pair<Long, VertexType> e : tmpList) {
+                                context.sendMessage(e, arr);
+                            }
                         }
                     }
 
@@ -191,7 +199,9 @@ public class Fusion {
                     List<Long> ownerList = new ArrayList<>();
                     vv.depositList = new ArrayList<>();
                     messageIterator.forEachRemaining(obj -> {
-                        if (obj instanceof Object[]) {
+                        if (obj instanceof Long){
+                            ownerList.add((Long) obj);
+                        }else if (obj instanceof Object[]) {
                             // from Account Transfer Account
                             Object[] msg = (Object[]) obj;
                             int n = msg.length;
