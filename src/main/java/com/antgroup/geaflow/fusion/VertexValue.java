@@ -10,7 +10,7 @@ import java.util.Set;
 public class VertexValue {
     VertexValue(){}
     VertexValue(double amount){
-        this.amount = amount;
+        this.amount =  amount;
     }
     // Case 1
     public double ret1;
@@ -27,6 +27,6 @@ public class VertexValue {
     // Case 4
     public double ret4;
     public Set<Long> guaranteeSet;
-    public double amount;
+    public Double amount;
 }
 

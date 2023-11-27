@@ -183,7 +183,7 @@ public class Fusion {
                             vv.outArr.add(vertexId);
                             // Case 1
                             vv.outArr.add(owner != null ? owner : -1);
-                            Object[] arr = vv.outArr.toArray();
+                            Long[] arr = vv.outArr.toArray(new Long[0]);
                             for (Pair<Long, VertexType> e : tmpList) {
                                 context.sendMessage(e, arr);
                             }
@@ -201,22 +201,22 @@ public class Fusion {
                     messageIterator.forEachRemaining(obj -> {
                         if (obj instanceof Long){
                             ownerList.add((Long) obj);
-                        }else if (obj instanceof Object[]) {
+                        }else if (obj instanceof Long[]) {
                             // from Account Transfer Account
-                            Object[] msg = (Object[]) obj;
+                            Long[] msg = (Long[]) obj;
                             int n = msg.length;
-                            if ((Long)msg[n - 1] != -1) {
+                            if (msg[n - 1] != -1) {
                                 // Case 1
-                                Long owner = (Long) msg[n - 1];
+                                Long owner =  msg[n - 1];
                                 ownerList.add(owner);
                             }
 
 
                             // Case 2
-                            Pair<Long, VertexType> succKey = new Pair<>((Long)msg[n - 2], VertexType.Account);
+                            Pair<Long, VertexType> succKey = new Pair<>(msg[n - 2], VertexType.Account);
                             Map<Long, Integer> out = new HashMap<>(), in = vv.inMap;
                             for (int i = 0; i < n - 2; i++) {
-                                out.compute((Long) msg[i], (k, v) -> (v == null) ? 1 : v + 1);
+                                out.compute(msg[i], (k, v) -> (v == null) ? 1 : v + 1);
                             }
                             int ret = 0;
                             if (in.size() < out.size()) {
