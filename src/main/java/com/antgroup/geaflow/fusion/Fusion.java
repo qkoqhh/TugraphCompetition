@@ -173,6 +173,7 @@ public class Fusion {
 
                     if (!tmpList.isEmpty()) {
                         if (vv.outArr.isEmpty()){
+                            // Case 1
                             if (owner != null) {
                                 for (Pair<Long, VertexType> e : tmpList) {
                                     context.sendMessage(e, owner);
@@ -200,6 +201,7 @@ public class Fusion {
                     List<Pair<Long, Double>> depositList = new ArrayList<>();
                     messageIterator.forEachRemaining(obj -> {
                         if (obj instanceof Long){
+                            // Case 1
                             ownerList.add((Long) obj);
                         }else if (obj instanceof Long[]) {
                             // from Account Transfer Account

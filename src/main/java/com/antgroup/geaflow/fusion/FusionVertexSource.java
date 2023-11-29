@@ -43,7 +43,7 @@ public class FusionVertexSource extends RichFunction implements SourceFunction<I
         inputLoan = new PartionFileInput(filePath+"Loan.csv",parallel,index);
         while (inputLoan.nextLine()){
             Long loanId = inputLoan.nextLong();
-            Long amount = inputLoan.nextLong();
+            Double amount = inputLoan.nextDouble();
             record.add(new ValueVertex<>(new Pair<>(loanId,VertexType.Loan),new VertexValue(amount)));
         }
     }

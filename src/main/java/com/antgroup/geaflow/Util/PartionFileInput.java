@@ -48,7 +48,7 @@ public class PartionFileInput {
         while(true){
             char ch= (char) buffer.get();
             pos++;
-            if(ch=='|'||ch=='.')break;
+            if(ch=='|')break;
             sb.append(ch);
         }
         return Long.parseLong(sb.toString());
